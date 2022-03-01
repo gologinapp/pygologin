@@ -299,6 +299,9 @@ class GoLogin(object):
 
         if preferences.get('navigator', {}).get('language'):
             preferences['language'] = preferences.get('navigator', {}).get('language')
+        
+        if preferences.get('isM1', False):
+            preferences["is_m1"] = preferences.get('isM1', False)
 
         return preferences
 
