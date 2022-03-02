@@ -182,7 +182,10 @@ class GoLogin(object):
             'Authorization': 'Bearer ' + self.access_token,
             'User-Agent': 'Selenium-API'
         }
-        return json.loads(requests.get(API_URL + '/browser/' + profile, headers=headers).content.decode('utf-8'))
+        data = json.loads(requests.get(API_URL + '/browser/' + profile, headers=headers).content.decode('utf-8'))
+        if data.get("statusCode")==404:
+            raise Exception(data.get("error")+ ": " +data.get("message"))            
+        return data
 
     def downloadProfileZip(self):
         s3path = self.profile.get('s3Path', '')
