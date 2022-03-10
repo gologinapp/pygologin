@@ -215,7 +215,7 @@ class GoLogin(object):
             self.createEmptyProfile()   
             self.extractProfileZip()
 
-        if not os.path.exists(os.path.join(self.profile_path, 'Default/Preferences')):
+        if not os.path.exists(os.path.join(self.profile_path, 'Default', 'Preferences')):
             self.uploadEmptyProfile()
             self.createEmptyProfile()   
             self.extractProfileZip()
@@ -318,7 +318,7 @@ class GoLogin(object):
 
 
     def updatePreferences(self):
-        pref_file = os.path.join(self.profile_path, 'Default/Preferences')
+        pref_file = os.path.join(self.profile_path, 'Default', 'Preferences')
         with open(pref_file, 'r', encoding="utf-8") as pfile:
             preferences = json.load(pfile)    
         profile = self.profile
