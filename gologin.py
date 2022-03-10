@@ -182,7 +182,10 @@ class GoLogin(object):
             'Authorization': 'Bearer ' + self.access_token,
             'User-Agent': 'Selenium-API'
         }
-        return json.loads(requests.get(API_URL + '/browser/' + profile, headers=headers).content.decode('utf-8'))
+        data = json.loads(requests.get(API_URL + '/browser/' + profile, headers=headers).content.decode('utf-8'))
+        if data.get("statusCode")==404:
+            raise Exception(data.get("error")+ ": " +data.get("message"))            
+        return data
 
     def downloadProfileZip(self):
         s3path = self.profile.get('s3Path', '')
@@ -200,6 +203,7 @@ class GoLogin(object):
             data = requests.get(s3url).content
 
         if len(data)==0:
+            self.uploadEmptyProfile()
             self.createEmptyProfile()            
         else:
             with open(self.profile_zip_path, 'wb') as f:
@@ -208,13 +212,22 @@ class GoLogin(object):
         try:
             self.extractProfileZip()
         except:
+            self.uploadEmptyProfile()
             self.createEmptyProfile()   
             self.extractProfileZip()
 
         if not os.path.exists(os.path.join(self.profile_path, 'Default/Preferences')):
+            self.uploadEmptyProfile()
             self.createEmptyProfile()   
             self.extractProfileZip()
 
+
+    def uploadEmptyProfile(self):
+        print('uploadEmptyProfile')
+        upload_profile = open(r'./gologin_zeroprofile.zip', 'wb')
+        source = requests.get('https://gprofiles.gologin.com/zero_profile.zip')
+        upload_profile.write(source.content)
+        upload_profile.close
 
     def createEmptyProfile(self):
         print('createEmptyProfile')
