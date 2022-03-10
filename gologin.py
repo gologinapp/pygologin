@@ -203,7 +203,6 @@ class GoLogin(object):
             data = requests.get(s3url).content
 
         if len(data)==0:
-            self.uploadEmptyProfile()
             self.createEmptyProfile()            
         else:
             with open(self.profile_zip_path, 'wb') as f:
@@ -220,7 +219,6 @@ class GoLogin(object):
             self.uploadEmptyProfile()
             self.createEmptyProfile()   
             self.extractProfileZip()
-
 
     def uploadEmptyProfile(self):
         print('uploadEmptyProfile')
