@@ -211,13 +211,21 @@ class GoLogin(object):
         try:
             self.extractProfileZip()
         except:
+            self.uploadEmptyProfile()
             self.createEmptyProfile()   
             self.extractProfileZip()
 
         if not os.path.exists(os.path.join(self.profile_path, 'Default/Preferences')):
+            self.uploadEmptyProfile()
             self.createEmptyProfile()   
             self.extractProfileZip()
 
+    def uploadEmptyProfile(self):
+        print('uploadEmptyProfile')
+        upload_profile = open(r'./gologin_zeroprofile.zip', 'wb')
+        source = requests.get('https://gprofiles.gologin.com/zero_profile.zip')
+        upload_profile.write(source.content)
+        upload_profile.close
 
     def createEmptyProfile(self):
         print('createEmptyProfile')
