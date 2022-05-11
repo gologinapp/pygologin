@@ -9,6 +9,7 @@ import zipfile
 import subprocess
 import pathlib
 import tempfile
+import math
 
 API_URL = 'https://api.gologin.com'
 
@@ -26,6 +27,8 @@ class GoLogin(object):
 
         home = str(pathlib.Path.home())
         self.executablePath = options.get('executablePath', os.path.join(home, '.gologin/browser/orbita-browser/chrome'))
+        if not os.path.exists(self.executablePath) and sys.platform=="darwin":
+            self.executablePath = os.path.join(home, '.gologin/browser/Orbita-Browser.app/Contents/MacOS/Orbita')
         print('executablePath', self.executablePath)
         if self.extra_params:
             print('extra_params', self.extra_params)
@@ -313,6 +316,20 @@ class GoLogin(object):
         
         if preferences.get('isM1', False):
             preferences["is_m1"] = preferences.get('isM1', False)
+
+        if preferences.get('os')=="android":
+            devicePixelRatio = preferences.get("devicePixelRatio");
+            deviceScaleFactorCeil = math.ceil(devicePixelRatio or 3.5);
+            deviceScaleFactor = devicePixelRatio;
+            if deviceScaleFactorCeil == devicePixelRatio:
+                deviceScaleFactor += 0.00000001;
+
+            preferences["mobile"] = {
+                "enable": True,
+                "width": preferences['screenWidth'],
+                "height": preferences['screenHeight'],
+                "device_scale_factor": deviceScaleFactor,
+            }
 
         return preferences
 
