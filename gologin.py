@@ -11,6 +11,9 @@ import pathlib
 import tempfile
 import math
 
+from extensionsManager import *
+from browserUserDataManager import *
+
 API_URL = 'https://api.gologin.com'
 
 class GoLogin(object):
@@ -44,6 +47,18 @@ class GoLogin(object):
         self.profile_zip_path_upload = os.path.join(self.tmpdir, 'gologin_'+self.profile_id+'_upload.zip')
 
 
+    def loadExtensions(self):
+        profile = self.profile
+        chromeExtensions = profile.get('chromeExtensions')
+        extensionsManagerInst = ExtensionsManager()
+        pathToExt = ''
+        for ext in chromeExtensions:
+            ver = extensionsManagerInst.downloadExt(ext)
+            pathToExt += os.path.join(pathlib.Path.home(), '.gologin', 'extensions', 'chrome-extensions', ext + '@' + ver + '\n')
+
+        return pathToExt
+
+
     def spawnBrowser(self):
         proxy = self.proxy
         proxy_host = ''
@@ -54,6 +69,12 @@ class GoLogin(object):
             proxy = self.formatProxyUrl(proxy)
         
         tz = self.tz.get('timezone')
+        chromeExtensions = self.profile.get('chromeExtensions')
+        if chromeExtensions and len(chromeExtensions)>0:
+            paths = self.loadExtensions()
+            split_paths = paths.split('\n')
+            while '' in set(split_paths):
+                split_paths.remove('')
 
         params = [
         self.executablePath,
@@ -62,8 +83,15 @@ class GoLogin(object):
         '--password-store=basic', 
         '--tz='+tz, 
         '--gologin-profile='+self.profile_name, 
-        '--lang=en', 
-        ]    
+        '--lang=en',
+        ]
+        load_ext = '--load-extension='
+        if chromeExtensions and len(chromeExtensions)>0:
+            for path in split_paths:
+                load_ext += path
+                load_ext += ','
+            params.append(load_ext)
+
         if proxy:
             hr_rules = '"MAP * 0.0.0.0 , EXCLUDE %s"'%(proxy_host)
             params.append('--proxy-server='+proxy)
@@ -387,6 +415,7 @@ class GoLogin(object):
         if self.local==False:
             self.downloadProfileZip()
         self.updatePreferences()
+        
         return self.profile_path
 
 
@@ -487,3 +516,8 @@ class GoLogin(object):
 
     def stopRemote(self):
         requests.delete(API_URL + '/browser/' + self.profile_id + '/web', headers=self.headers())
+
+
+    def createBrowserExtension(self):
+        extPath = os.path.join(self.tmpdir, 'orbita_extension_' + self.profile_id)
+        # print(extPath)
