@@ -515,8 +515,3 @@ class GoLogin(object):
 
     def stopRemote(self):
         requests.delete(API_URL + '/browser/' + self.profile_id + '/web', headers=self.headers())
-
-
-    def createBrowserExtension(self):
-        extPath = os.path.join(self.tmpdir, 'orbita_extension_' + self.profile_id)
-        # print(extPath)
