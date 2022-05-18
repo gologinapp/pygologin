@@ -12,7 +12,6 @@ import tempfile
 import math
 
 from extensionsManager import *
-from browserUserDataManager import *
 
 API_URL = 'https://api.gologin.com'
 
