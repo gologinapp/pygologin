@@ -8,7 +8,7 @@ HOMEDIR = pathlib.Path.home()
 CHROME_EXT_DIR_NAME = 'chrome-extensions'
 EXTENSIONS_PATH = os.path.join(HOMEDIR, '.gologin', 'extensions')
 CHROME_EXTENSIONS_PATH = os.path.join(EXTENSIONS_PATH, CHROME_EXT_DIR_NAME)
-EXTENSION_URL = os.path.join('https://clients2.google.com/service/update2/crx?response=redirect&acceptformat=crx2,crx3&x=id%3D{ext_id}%26uc&prodversion=97.0.4692.71')
+EXTENSION_URL = 'https://clients2.google.com/service/update2/crx?response=redirect&acceptformat=crx2,crx3&x=id%3D{ext_id}%26uc&prodversion=97.0.4692.71'
 
 
 class ExtensionsManager():
