@@ -113,7 +113,6 @@ class GoLogin(object):
             except:
                 try_count += 1
                 time.sleep(1)
-        
         return url
 
     def start(self):
@@ -316,8 +315,9 @@ class GoLogin(object):
         preferences['get_client_rects_noise'] = preferences.get('webGL', {}).get('getClientRectsNoise')
         preferences['canvasMode'] = preferences.get('canvas', {}).get('mode')
         preferences['canvasNoise'] = preferences.get('canvas', {}).get('noise')
+        preferences['audioContextMode'] = preferences.get('audioContext', {}).get('mode')
         preferences['audioContext'] = {
-            'enable': preferences.get('audioContext').get('mode', 'off'),
+            'enable': preferences.get('audioContextMode')!= 'off',
             'noiseValue': preferences.get('audioContext').get('noise'),
         }
 
@@ -399,8 +399,8 @@ class GoLogin(object):
             print('empty profile name')
             print('profile=', profile)
             exit()
-
-        gologin = self.convertPreferences(profile)
+            
+        gologin = self.convertPreferences(profile)        
         if self.credentials_enable_service!=None:
             preferences['credentials_enable_service'] = self.credentials_enable_service
         preferences['gologin'] = gologin
