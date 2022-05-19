@@ -399,6 +399,7 @@ class GoLogin(object):
             print('empty profile name')
             print('profile=', profile)
             exit()
+            
         gologin = self.convertPreferences(profile)        
         if self.credentials_enable_service!=None:
             preferences['credentials_enable_service'] = self.credentials_enable_service
