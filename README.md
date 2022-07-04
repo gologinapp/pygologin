@@ -97,4 +97,7 @@ start browser with profile id
 stop browser with profile id
 
 ## Full GoLogin API
-<a href="https://api.gologin.com/docs" target="_blank">API link here</a>
+**Swagger:** <a href="https://api.gologin.com/docs" target="_blank">link here</a>
+
+**Postman:** <a href="https://documenter.getpostman.com/view/21126834/Uz5GnvaL" target="_blank">link here</a>
+

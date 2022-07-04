@@ -51,9 +51,20 @@ class GoLogin(object):
         chromeExtensions = profile.get('chromeExtensions')
         extensionsManagerInst = ExtensionsManager()
         pathToExt = ''
+        profileExtensionsCheckRes = []        
         for ext in chromeExtensions:
             ver = extensionsManagerInst.downloadExt(ext)
             pathToExt += os.path.join(pathlib.Path.home(), '.gologin', 'extensions', 'chrome-extensions', ext + '@' + ver + '\n')
+            profileExtensionsCheckRes.append(os.path.join(pathlib.Path.home(), '.gologin', 'extensions', 'chrome-extensions', ext + '@' + ver))
+
+        pref_file = os.path.join(self.profile_path, 'Default', 'Preferences')
+        with open(pref_file, 'r', encoding="utf-8") as pfile:
+            preferences = json.load(pfile)
+
+        preferences = ExtensionsManager().setExtPathsAndRemoveDeleted(preferences, profileExtensionsCheckRes)
+
+        pfile = open(pref_file, 'w')
+        json.dump(preferences, pfile)
 
         return pathToExt
 
@@ -71,9 +82,6 @@ class GoLogin(object):
         chromeExtensions = self.profile.get('chromeExtensions')
         if chromeExtensions and len(chromeExtensions)>0:
             paths = self.loadExtensions()
-            split_paths = paths.split('\n')
-            while '' in set(split_paths):
-                split_paths.remove('')
 
         params = [
         self.executablePath,
@@ -82,14 +90,8 @@ class GoLogin(object):
         '--password-store=basic', 
         '--tz='+tz, 
         '--gologin-profile='+self.profile_name, 
-        '--lang=en',
+        '--lang=en-US',
         ]
-        load_ext = '--load-extension='
-        if chromeExtensions and len(chromeExtensions)>0:
-            for path in split_paths:
-                load_ext += path
-                load_ext += ','
-            params.append(load_ext)
 
         if proxy:
             hr_rules = '"MAP * 0.0.0.0 , EXCLUDE %s"'%(proxy_host)
