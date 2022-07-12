@@ -200,7 +200,10 @@ class GoLogin(object):
     def getTimeZone(self):
         proxy = self.proxy
         if proxy:            
-            proxies = {proxy.get('mode'): self.formatProxyUrlPassword(proxy)}
+            proxies = {
+                'http': self.formatProxyUrlPassword(proxy),
+                'https': self.formatProxyUrlPassword(proxy)
+            }
             data = requests.get('https://time.gologin.com', proxies=proxies)
         else:
             data = requests.get('https://time.gologin.com')
