@@ -35,11 +35,14 @@ from sys import platform
 from selenium import webdriver
 from selenium.webdriver.chrome.options import Options
 from gologin import GoLogin
+from gologin import get_random_port
 
+# random_port = get_random_port() # uncomment to use random port
 
 gl = GoLogin({
 	"token": "yU0token",
 	"profile_id": "yU0Pr0f1leiD",
+	# "port": random_port
 	})
 
 if platform == "linux" or platform == "linux2":
@@ -79,12 +82,61 @@ gl.stop()
     - `extra_params` arrayof <[string]> extra params for browser orbita (ex. extentions etc.)
     - `uploadCookiesToServer` <[boolean]> upload cookies to server after profile stopping (default false)
     - `writeCookesFromServer` <[boolean]> download cookies from server and write to profile cookies file (default true)
+    - `port` <[integer]> Orbita start port (uncomment out the lines with "random port" and "port" in `gologin-selenium.py` to select a random launch port)
 
 ```py
 gl = GoLogin({
 	"token": "yU0token",
 	"profile_id": "yU0Pr0f1leiD",
 	})
+
+```
+#### Example create profile
+`python gologin-create-profile.py`
+```py
+from gologin import GoLogin
+
+
+gl = GoLogin({
+	"token": "yU0token",
+	})
+
+profile_id = gl.create({
+    "name": 'profile_mac',
+    "os": 'mac',
+    "navigator": {
+        "language": 'en-US',
+        "userAgent": 'random', # Your userAgent (if you don't want to change, leave it at 'random')
+        "resolution": '1024x768', # Your resolution (if you want a random resolution - set it to 'random')
+        "platform": 'mac',
+    },
+    'proxyEnabled': True, # Specify 'false' if not using proxy
+    'proxy': {
+        'mode': 'gologin',
+        'autoProxyRegion': 'us' 
+        # 'host': '',
+        # 'port': '',
+        # 'username': '',
+        # 'password': '',
+    },
+    "webRTC": {
+        "mode": "alerted",
+        "enabled": True,
+    },
+});
+
+print('profile id=', profile_id);
+
+# gl.update({
+#     "id": 'yU0Pr0f1leiD',
+#     "name": 'profile_mac2',
+# });
+
+profile = gl.getProfile(profile_id);
+
+print('new profile name=', profile.get("name"));
+
+# gl.delete('yU0Pr0f1leiD')
 
 ```
 
