@@ -10,6 +10,8 @@ import subprocess
 import pathlib
 import tempfile
 import math
+import socket
+import random
 
 from extensionsManager import *
 
@@ -439,12 +441,30 @@ class GoLogin(object):
 
     def create(self, options={}):
         profile_options = self.getRandomFingerprint(options)
+        if options.get('navigator'):
+            resolution = options.get('navigator').get('resolution')
+            userAgent = options.get('navigator').get('userAgent')
+            language = options.get('navigator').get('language')
+
+            if resolution == 'random' or userAgent == 'random':
+                options.pop('navigator')
+            if resolution != 'random' and userAgent != 'random':
+                options.pop('navigator')            
+            if resolution == 'random' and userAgent != 'random':
+                profile_options['navigator']['userAgent'] = userAgent
+            if userAgent == 'random' and resolution != 'random':
+                profile_options['navigator']['resolution'] = resolution
+            if resolution != 'random' and userAgent != 'random':
+                profile_options['navigator']['userAgent'] = userAgent
+                profile_options['navigator']['resolution'] = resolution
+                       
+            profile_options['navigator']['language'] = language
+
         profile = {
           "name": "default_name",
           "notes": "auto generated",
           "browserType": "chrome",
           "os": "lin",
-          "startUrl": "google.com",
           "googleServicesEnabled": True,
           "lockEnabled": False,
           "audioContext": {
@@ -459,17 +479,19 @@ class GoLogin(object):
             "customize": True,
             "fillBasedOnIp": True
           },
+          "fonts": {
+            "families": profile_options.get('fonts')
+          },
           "navigator": profile_options.get('navigator', {}),
-          "screenHeight": 768,
-          "screenWidth": 1024,
-          "proxyEnabled": True,
+          # "screenHeight": 768,
+          # "screenWidth": 1024,
           "profile": json.dumps(profile_options),
         }
     
-        if profile.get('navigator'):
-          profile['navigator']['resolution'] = "1024x768"
-        else:
-          profile['navigator'] = {'resolution': "1024x768"}
+        # if profile.get('navigator'):
+        #   profile['navigator']['resolution'] = "1024x768"
+        # else:
+        #   profile['navigator'] = {'resolution': "1024x768"}
         
         for k,v in options.items():
             profile[k] = v
@@ -520,3 +542,14 @@ class GoLogin(object):
 
     def stopRemote(self):
         requests.delete(API_URL + '/browser/' + self.profile_id + '/web', headers=self.headers())
+
+def get_random_port():
+    while True:
+        port = random.randint(1000, 35000)
+        sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+        result = sock.connect_ex(('127.0.0.1', port))
+        if result == 0:
+            continue
+        else:
+            return port
+        sock.close()
