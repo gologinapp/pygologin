@@ -441,10 +441,11 @@ class GoLogin(object):
 
     def create(self, options={}):
         profile_options = self.getRandomFingerprint(options)
+        navigator = options.get('navigator')
         if options.get('navigator'):
-            resolution = options.get('navigator').get('resolution')
-            userAgent = options.get('navigator').get('userAgent')
-            language = options.get('navigator').get('language')
+            resolution = navigator.get('resolution')
+            userAgent = navigator.get('userAgent')
+            language = navigator.get('language')
 
             if resolution == 'random' or userAgent == 'random':
                 options.pop('navigator')

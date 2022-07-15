@@ -5,7 +5,7 @@ from selenium.webdriver.chrome.options import Options
 from gologin import GoLogin
 from gologin import get_random_port
 
-# random_port = get_random_port()
+# random_port = get_random_port() # uncomment to use random port
 
 gl = GoLogin({
 	"token": "yU0token",

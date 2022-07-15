@@ -10,14 +10,18 @@ profile_id = gl.create({
     "os": 'mac',
     "navigator": {
         "language": 'en-US',
-        "userAgent": 'random', 
-        "resolution": '1024x768',
+        "userAgent": 'random', # Your userAgent (if you don't want to change, leave it at 'random')
+        "resolution": '1024x768', # Your resolution (if you want a random resolution - set it to 'random')
         "platform": 'mac',
     },
-    'proxyEnabled': True,
+    'proxyEnabled': True, # Specify 'false' if not using proxy
     'proxy': {
         'mode': 'gologin',
         'autoProxyRegion': 'us' 
+        # "host": '',
+        # "port": '',
+        # "username": '',
+        # "password": '',
     },
     "webRTC": {
         "mode": "alerted",
