@@ -311,7 +311,7 @@ class GoLogin(object):
         resolution = preferences.get('resolution', '1920x1080')
         preferences['screenWidth'] = int(resolution.split('x')[0])
         preferences['screenHeight'] = int(resolution.split('x')[1])
-        
+        self.preferences = preferences
         self.tz = self.getTimeZone()
         # print('tz=', self.tz)
         tzGeoLocation = {
@@ -560,6 +560,12 @@ class GoLogin(object):
 
     def stopRemote(self):
         requests.delete(API_URL + '/browser/' + self.profile_id + '/web', headers=self.headers())
+
+    async def normalizePageView(self, page):
+        width = self.preferences.get("screenWidth")
+        height = self.preferences.get("screenHeight")
+        await page.setViewport({"width": width, "height": height});
+
 
 def get_random_port():
     while True:
