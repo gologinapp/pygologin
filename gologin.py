@@ -138,7 +138,21 @@ class GoLogin(object):
                 except:
                     continue
 
+    def waitUntilProfileUsing(self, try_count=0):
+        if try_count>10:
+            return
+        time.sleep(1)
+        profile_path = self.profile_path
+        if os.path.exists(profile_path):
+            try:
+                os.rename(profile_path, profile_path)
+            except OSError as e:
+                print("waiting chrome termination") 
+                self.waitUntilProfileUsing(try_count+1)   
+
+
     def stop(self):
+        self.waitUntilProfileUsing()
         self.sanitizeProfile()
         if self.local==False:
             self.commitProfile()
@@ -416,7 +430,10 @@ class GoLogin(object):
 
     def createStartup(self):
         if self.local==False and os.path.exists(self.profile_path):
-            shutil.rmtree(self.profile_path)
+            try:
+                shutil.rmtree(self.profile_path)
+            except:
+                print("error removing profile", self.profile_path)
         self.profile = self.getProfile()
         if self.local==False:
             self.downloadProfileZip()
