@@ -20,7 +20,7 @@ API_URL = 'https://api.gologin.com'
 class GoLogin(object):
     def __init__(self, options):
         self.access_token = options.get('token')
-
+        self.profile_id = options.get('profile_id')
         self.tmpdir = options.get('tmpdir', tempfile.gettempdir())
         self.address = options.get('address', '127.0.0.1')
         self.extra_params = options.get('extra_params', [])
@@ -387,6 +387,7 @@ class GoLogin(object):
         with open(pref_file, 'r', encoding="utf-8") as pfile:
             preferences = json.load(pfile)    
         profile = self.profile
+        profile['profile_id'] = self.profile_id
         proxy = self.profile.get('proxy')
         # print('proxy=', proxy)
         if proxy and (proxy.get('mode')=='gologin' or proxy.get('mode')=='tor'):
