@@ -336,6 +336,8 @@ class GoLogin(object):
         preferences['get_client_rects_noise'] = preferences.get('webGL', {}).get('getClientRectsNoise')
         preferences['canvasMode'] = preferences.get('canvas', {}).get('mode')
         preferences['canvasNoise'] = preferences.get('canvas', {}).get('noise')
+        if preferences.get('clientRects', {}).get('mode') == 'noise':
+            preferences['client_rects_noise_enable'] = True
         preferences['audioContextMode'] = preferences.get('audioContext', {}).get('mode')
         preferences['audioContext'] = {
             'enable': preferences.get('audioContextMode')!= 'off',
