@@ -3,14 +3,12 @@ from sys import platform
 from selenium import webdriver
 from selenium.webdriver.chrome.options import Options
 from gologin import GoLogin
-from gologin import get_random_port
+from gologin import getRandomPort
 
-# random_port = get_random_port() # uncomment to use random port
 
 gl = GoLogin({
 	"token": "yU0token",
-	"profile_id": "yU0Pr0f1leiD",
-	# "port": random_port
+	"profile_id": "yU0Pr0f1leiD"
 	})
 
 if platform == "linux" or platform == "linux2":
