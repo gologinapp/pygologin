@@ -564,13 +564,21 @@ class GoLogin(object):
     def stopRemote(self):
         requests.delete(API_URL + '/browser/' + self.profile_id + '/web', headers=self.headers())
 
+    def clearCookies(self, profile_id=None):
+        profile = self.profile_id if profile_id==None else profile_id
+        resp = requests.post(API_URL + '/browser/' + profile + '/cookies?cleanCookies=true', headers=self.headers(), json=[])
+        if resp.status_code == 204:
+            return {'status': 'success'}
+        else:
+            return {'status': 'failure'}
+
     async def normalizePageView(self, page):
         width = self.preferences.get("screenWidth")
         height = self.preferences.get("screenHeight")
         await page.setViewport({"width": width, "height": height});
 
 
-def get_random_port():
+def getRandomPort():
     while True:
         port = random.randint(1000, 35000)
         sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
