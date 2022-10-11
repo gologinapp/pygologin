@@ -37,7 +37,7 @@ class GoLogin(object):
         if self.extra_params:
             print('extra_params', self.extra_params)
         self.setProfileId(options.get('profile_id')) 
-
+        self.preferences = {}
 
     def setProfileId(self, profile_id):
         self.profile_id = profile_id
@@ -573,6 +573,10 @@ class GoLogin(object):
             return {'status': 'failure'}
 
     async def normalizePageView(self, page):
+        if self.preferences.get("screenWidth")==None:
+            self.profile = self.getProfile()
+            self.preferences['screenWidth'] = int(self.profile.get("navigator").get("resolution").split('x')[0])
+            self.preferences['screenHeight'] = int(self.profile.get("navigator").get("resolution").split('x')[1])
         width = self.preferences.get("screenWidth")
         height = self.preferences.get("screenHeight")
         await page.setViewport({"width": width, "height": height});
