@@ -30,7 +30,7 @@ class GoLogin(object):
         self.credentials_enable_service = options.get('credentials_enable_service')
 
         home = str(pathlib.Path.home())
-        self.executablePath = options.get('executablePath', os.path.join(home, '.gologin/browser/orbita-browser/chrome'))
+        self.executablePath = options.get('executablePath', os.path.join(home, '.gologin', 'browser', 'orbita-browser-105', 'chrome'))
         if not os.path.exists(self.executablePath) and sys.platform=="darwin":
             self.executablePath = os.path.join(home, '.gologin/browser/Orbita-Browser.app/Contents/MacOS/Orbita')
         print('executablePath', self.executablePath)
