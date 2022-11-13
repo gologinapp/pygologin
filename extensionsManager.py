@@ -49,19 +49,20 @@ class ExtensionsManager():
             return extVer
 
 
-    def setExtPathsAndRemoveDeleted(self, settings = {}, profileExtensionsCheckRes = []):
+    def extensionIsAlreadyExisted(self, settings = {}, profileExtensionsCheck = []):
         extensionsSettings = settings['extensions']['settings']
         
-        for p in profileExtensionsCheckRes:
+        for p in profileExtensionsCheck:
             if platform == 'win32':
                 p.replace('/', '\\')
                 originalId = p.split('\\')[6].split('@')[0]
             else:
                 originalId = p.split('/')[6].split('@')[0]
 
-            extensionsSettings[originalId]['path'] = p
-
-        return settings
+            if originalId in extensionsSettings:
+                return True
+            else:
+                return False
 
 
 def crxToZip(buf):
