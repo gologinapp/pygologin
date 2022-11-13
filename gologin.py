@@ -56,22 +56,23 @@ class GoLogin(object):
         chromeExtensions = profile.get('chromeExtensions')
         extensionsManagerInst = ExtensionsManager()
         pathToExt = ''
-        profileExtensionsCheckRes = []        
+        profileExtensionsCheck = []        
         for ext in chromeExtensions:
             ver = extensionsManagerInst.downloadExt(ext)
-            pathToExt += os.path.join(pathlib.Path.home(), '.gologin', 'extensions', 'chrome-extensions', ext + '@' + ver + '\n')
-            profileExtensionsCheckRes.append(os.path.join(pathlib.Path.home(), '.gologin', 'extensions', 'chrome-extensions', ext + '@' + ver))
+            pathToExt += os.path.join(pathlib.Path.home(), '.gologin', 'extensions', 'chrome-extensions', ext + '@' + ver + ',')
+            profileExtensionsCheck.append(os.path.join(pathlib.Path.home(), '.gologin', 'extensions', 'chrome-extensions', ext + '@' + ver))
 
         pref_file = os.path.join(self.profile_path, 'Default', 'Preferences')
         with open(pref_file, 'r', encoding="utf-8") as pfile:
             preferences = json.load(pfile)
 
-        preferences = ExtensionsManager().setExtPathsAndRemoveDeleted(preferences, profileExtensionsCheckRes)
+        noteExtExist = ExtensionsManager().extensionIsAlreadyExisted(preferences, profileExtensionsCheck)
 
-        pfile = open(pref_file, 'w')
-        json.dump(preferences, pfile)
-
-        return pathToExt
+        if noteExtExist is True:
+            print('мы здесь')
+            return
+        else:
+            return pathToExt
 
 
     def spawnBrowser(self):
@@ -84,9 +85,6 @@ class GoLogin(object):
             proxy = self.formatProxyUrl(proxy)
         
         tz = self.tz.get('timezone')
-        chromeExtensions = self.profile.get('chromeExtensions')
-        if chromeExtensions and len(chromeExtensions)>0:
-            paths = self.loadExtensions()
 
         params = [
         self.executablePath,
@@ -97,6 +95,13 @@ class GoLogin(object):
         '--gologin-profile='+self.profile_name, 
         '--lang=en-US',
         ]
+
+        chromeExtensions = self.profile.get('chromeExtensions')
+        if chromeExtensions and len(chromeExtensions)>0:
+            paths = self.loadExtensions()
+            if paths is not None:
+                extToParams = '--load-extension=' + paths
+                params.append(extToParams)
 
         if proxy:
             hr_rules = '"MAP * 0.0.0.0 , EXCLUDE %s"'%(proxy_host)
