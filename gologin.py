@@ -68,7 +68,7 @@ class GoLogin(object):
 
         noteExtExist = ExtensionsManager().extensionIsAlreadyExisted(preferences, profileExtensionsCheck)
 
-        if noteExtExist is True:
+        if noteExtExist:
             return
         else:
             return pathToExt
