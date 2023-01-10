@@ -369,7 +369,7 @@ class GoLogin(object):
             preferences['hardwareConcurrency'] = preferences.get('navigator', {}).get('hardwareConcurrency')
 
         if preferences.get('navigator', {}).get('language'):
-            preferences['language'] = preferences.get('navigator', {}).get('language')
+            preferences['languages'] = preferences.get('navigator', {}).get('language')
         
         if preferences.get('isM1', False):
             preferences["is_m1"] = preferences.get('isM1', False)
