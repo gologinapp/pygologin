@@ -25,5 +25,6 @@ driver = webdriver.Chrome(executable_path=chrome_driver_path, options=chrome_opt
 driver.get("http://www.python.org")
 assert "Python" in driver.title
 time.sleep(3)
-driver.close()
+driver.quit()
+time.sleep(3)
 gl.stop()

@@ -28,7 +28,8 @@ def scrap(profile):
 	print('ready', profile['profile_id'], driver.title)
 	time.sleep(10)
 	print('closing', profile['profile_id'])
-	driver.close()
+	driver.quit()
+	time.sleep(3)
 	gl.stop()
 
 profiles = [

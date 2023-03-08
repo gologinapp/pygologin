@@ -12,6 +12,7 @@ import tempfile
 import math
 import socket
 import random
+import psutil
 
 from extensionsManager import *
 
@@ -41,6 +42,7 @@ class GoLogin(object):
             print('extra_params', self.extra_params)
         self.setProfileId(options.get('profile_id')) 
         self.preferences = {}
+        self.pid = int()
 
     def setProfileId(self, profile_id):
         self.profile_id = profile_id
@@ -111,9 +113,11 @@ class GoLogin(object):
             params.append(param)
 
         if sys.platform == "darwin":
-            subprocess.Popen(params)
+            open_browser = subprocess.Popen(params)
+            self.pid = open_browser.pid
         else:
-            subprocess.Popen(params, start_new_session=True)
+            open_browser = subprocess.Popen(params, start_new_session=True)
+            self.pid = open_browser.pid
 
         try_count = 1
         url = str(self.address) + ':' + str(self.port)
@@ -159,6 +163,9 @@ class GoLogin(object):
 
 
     def stop(self):
+        for proc in psutil.process_iter(['pid']):
+            if proc.info.get('pid') == self.pid:
+                proc.kill()
         self.waitUntilProfileUsing()
         self.sanitizeProfile()
         if self.local==False:

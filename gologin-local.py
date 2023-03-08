@@ -25,6 +25,6 @@ chrome_options.add_experimental_option("debuggerAddress", debugger_address)
 driver = webdriver.Chrome(executable_path=chrome_driver_path, options=chrome_options)
 driver.get("http://www.python.org")
 assert "Python" in driver.title
-driver.close()
+driver.quit()
 time.sleep(3)
 gl.stop()
