@@ -33,9 +33,9 @@ class GoLogin(object):
         home = str(pathlib.Path.home())
         browser_gologin = os.path.join(home, '.gologin', 'browser')
         for orbita_browser in os.listdir(browser_gologin):
-            if not orbita_browser.endswith('.zip') and orbita_browser.startswith('orbita-browser'):
+            if not orbita_browser.endswith('.zip') and not orbita_browser.endswith('.tar.gz') and orbita_browser.startswith('orbita-browser'):
                 self.executablePath = options.get('executablePath', os.path.join(browser_gologin, orbita_browser, 'chrome'))
-                if not os.path.exists(self.executablePath) and sys.platform=="darwin":
+                if not os.path.exists(self.executablePath) and not orbita_browser.endswith('.tar.gz') and sys.platform=="darwin":
                     self.executablePath = os.path.join(home, browser_gologin, orbita_browser, 'Orbita-Browser.app/Contents/MacOS/Orbita')
         print('executablePath', self.executablePath)
         if self.extra_params:
