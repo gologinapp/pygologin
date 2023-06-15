@@ -221,8 +221,9 @@ class GoLogin(object):
         return proxy.get('mode', 'http')+'://'+proxy.get('host','')+':'+str(proxy.get('port',80))
 
     def formatProxyUrlPassword(self, proxy):
+        mode = "socks5h" if proxy.get("mode") == "socks5" else proxy.get("mode", "http")
         if proxy.get('username', '')=='':
-            return proxy.get('mode', 'http')+'://'+proxy.get('host','')+':'+str(proxy.get('port',80))
+            return mode+'://'+proxy.get('host','')+':'+str(proxy.get('port',80))
         else:
             return proxy.get('mode', 'http')+'://'+proxy.get('username','')+':'+proxy.get('password')+'@'+proxy.get('host','')+':'+str(proxy.get('port',80))
 
