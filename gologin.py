@@ -29,18 +29,26 @@ class GoLogin(object):
         self.local = options.get('local', False)
         self.spawn_browser = options.get('spawn_browser', True)
         self.credentials_enable_service = options.get('credentials_enable_service')
+        self.executablePath = ''
 
         home = str(pathlib.Path.home())
         browser_gologin = os.path.join(home, '.gologin', 'browser')
-        for orbita_browser in os.listdir(browser_gologin):
-            if not orbita_browser.endswith('.zip') and not orbita_browser.endswith('.tar.gz') and orbita_browser.startswith('orbita-browser'):
-                self.executablePath = options.get('executablePath', os.path.join(browser_gologin, orbita_browser, 'chrome'))
-                if not os.path.exists(self.executablePath) and not orbita_browser.endswith('.tar.gz') and sys.platform=="darwin":
-                    self.executablePath = os.path.join(home, browser_gologin, orbita_browser, 'Orbita-Browser.app/Contents/MacOS/Orbita')
-        print('executablePath', self.executablePath)
+        try:
+            for orbita_browser in os.listdir(browser_gologin):
+                if not orbita_browser.endswith('.zip') and not orbita_browser.endswith('.tar.gz') and orbita_browser.startswith('orbita-browser'):
+                    self.executablePath = options.get('executablePath', os.path.join(browser_gologin, orbita_browser, 'chrome'))
+                    if not os.path.exists(self.executablePath) and not orbita_browser.endswith('.tar.gz') and sys.platform=="darwin":
+                        self.executablePath = os.path.join(home, browser_gologin, orbita_browser, 'Orbita-Browser.app/Contents/MacOS/Orbita')
+
+        except Exception as e:
+            self.executablePath = ''
+
+        if not self.executablePath:
+            raise Exception(f"Orbita executable file not found in HOME ({browser_gologin}). Is gologin installed on your system?")
+
         if self.extra_params:
             print('extra_params', self.extra_params)
-        self.setProfileId(options.get('profile_id')) 
+        self.setProfileId(options.get('profile_id'))
         self.preferences = {}
         self.pid = int()
 
@@ -48,9 +56,9 @@ class GoLogin(object):
         self.profile_id = profile_id
         if self.profile_id==None:
             return
-        self.profile_path = os.path.join(self.tmpdir, 'gologin_'+self.profile_id)
-        self.profile_zip_path = os.path.join(self.tmpdir, 'gologin_'+self.profile_id+'.zip')
-        self.profile_zip_path_upload = os.path.join(self.tmpdir, 'gologin_'+self.profile_id+'_upload.zip')
+        self.profile_path = os.path.join(self.tmpdir, 'gologin_' + self.profile_id)
+        self.profile_zip_path = os.path.join(self.tmpdir, 'gologin_' + self.profile_id+'.zip')
+        self.profile_zip_path_upload = os.path.join(self.tmpdir, 'gologin_' + self.profile_id+'_upload.zip')
 
 
     def loadExtensions(self):
