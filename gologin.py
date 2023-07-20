@@ -436,6 +436,9 @@ class GoLogin(object):
         if not proxy or proxy.get('mode')=='none':
             print('no proxy')
             proxy = None
+
+        if proxy and proxy.get('mode') == 'geolocation':
+            proxy['mode'] = 'http'
         
         if proxy and proxy.get('mode')==None:
             proxy['mode'] = 'http'
