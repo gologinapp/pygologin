@@ -30,6 +30,7 @@ class GoLogin(object):
         self.spawn_browser = options.get('spawn_browser', True)
         self.credentials_enable_service = options.get('credentials_enable_service')
         self.executablePath = ''
+        self.is_new_cloud_browser = options.get('is_new_cloud_browser', True)
 
         home = str(pathlib.Path.home())
         browser_gologin = os.path.join(home, '.gologin', 'browser')
@@ -562,8 +563,8 @@ class GoLogin(object):
         #print("update", resp)
         #return json.loads(resp)
 
-    def waitDebuggingUrl(self, delay_s, try_count=3):
-        url = 'https://' + self.profile_id + '.orbita.gologin.com/json/version'
+    def waitDebuggingUrl(self, delay_s, remote_orbita_url, try_count=3):
+        url = remote_orbita_url + '/json/version'
         wsUrl = ''
         try_number = 1
         while wsUrl=='':
@@ -577,18 +578,34 @@ class GoLogin(object):
                 return {'status': 'failure', 'wsUrl': wsUrl}
             try_number += 1
 
-        wsUrl = wsUrl.replace('ws://', 'wss://').replace('127.0.0.1', self.profile_id + '.orbita.gologin.com')
+        remote_orbita_url_without_protocol = remote_orbita_url.replace('https://', '')
+        wsUrl = wsUrl.replace('ws://', 'wss://').replace('127.0.0.1', remote_orbita_url_without_protocol)
+
         return {'status': 'success', 'wsUrl': wsUrl}
 
     def startRemote(self, delay_s=3):
-        profileResponse = requests.post(API_URL + '/browser/' + self.profile_id + '/web', headers=self.headers()).content.decode('utf-8')
-        print('profileResponse', profileResponse)
-        if profileResponse == 'ok':
-            return self.waitDebuggingUrl(delay_s)
-        return {'status': 'failure'}
+        responseJson = requests.post(
+            API_URL + '/browser/' + self.profile_id + '/web',
+            headers=self.headers(),
+            json={'isNewCloudBrowser': self.is_new_cloud_browser}
+        ).content.decode('utf-8')
+        response = json.loads(responseJson)
+        print('profileResponse', response)
+
+        remote_orbita_url = 'https://' + self.profile_id + '.orbita.gologin.com'
+        if self.is_new_cloud_browser:
+            if not response['remoteOrbitaUrl']:
+                raise Exception('Couldn\' start the remote browser')
+            remote_orbita_url = response['remoteOrbitaUrl']
+
+        return self.waitDebuggingUrl(delay_s, remote_orbita_url=remote_orbita_url)
 
     def stopRemote(self):
-        requests.delete(API_URL + '/browser/' + self.profile_id + '/web', headers=self.headers())
+        response = requests.delete(
+            API_URL + '/browser/' + self.profile_id + '/web',
+            headers=self.headers(),
+            params={'isNewCloudBrowser': self.is_new_cloud_browser}
+        )
 
     def clearCookies(self, profile_id=None):
         profile = self.profile_id if profile_id==None else profile_id
