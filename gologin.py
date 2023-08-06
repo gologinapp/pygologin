@@ -493,6 +493,8 @@ class GoLogin(object):
             resolution = navigator.get('resolution')
             userAgent = navigator.get('userAgent')
             language = navigator.get('language')
+            hardwareConcurrency = navigator.get('hardwareConcurrency')
+            deviceMemory = navigator.get('deviceMemory')
 
             if resolution == 'random' or userAgent == 'random':
                 options.pop('navigator')
@@ -505,6 +507,10 @@ class GoLogin(object):
             if resolution != 'random' and userAgent != 'random':
                 profile_options['navigator']['userAgent'] = userAgent
                 profile_options['navigator']['resolution'] = resolution
+            if hardwareConcurrency != 'random' and userAgent != 'random' and hardwareConcurrency != None:
+                profile_options['navigator']['hardwareConcurrency'] = hardwareConcurrency
+            if deviceMemory != 'random' and userAgent != 'random' and deviceMemory != None:
+                profile_options['navigator']['deviceMemory'] = deviceMemory
                        
             profile_options['navigator']['language'] = language
 
