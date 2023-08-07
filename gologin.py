@@ -14,7 +14,7 @@ import socket
 import random
 import psutil
 
-from extensionsManager import *
+from .extensionsManager import *
 
 API_URL = 'https://api.gologin.com'
 
