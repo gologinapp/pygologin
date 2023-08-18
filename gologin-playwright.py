@@ -1,6 +1,5 @@
 import asyncio
 from playwright.async_api import async_playwright
-from sys import platform
 from gologin import GoLogin
 
 async def main():
