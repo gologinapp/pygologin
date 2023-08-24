@@ -17,6 +17,8 @@ import psutil
 from .extensionsManager import *
 
 API_URL = 'https://api.gologin.com'
+PROFILES_URL = 'https://gprofiles-new.gologin.com/'
+
 
 class GoLogin(object):
     def __init__(self, options):
@@ -273,7 +275,7 @@ class GoLogin(object):
             data = requests.get(API_URL + '/browser/'+self.profile_id, headers=headers).content
         else:
             # print('downloading profile s3')
-            s3url = 'https://gprofiles.gologin.com/' + s3path.replace(' ', '+')
+            s3url = PROFILES_URL + s3path.replace(' ', '+')
             data = requests.get(s3url).content
 
         if len(data)==0:
@@ -297,7 +299,7 @@ class GoLogin(object):
     def uploadEmptyProfile(self):
         print('uploadEmptyProfile')
         upload_profile = open(r'./gologin_zeroprofile.zip', 'wb')
-        source = requests.get('https://gprofiles.gologin.com/zero_profile.zip')
+        source = requests.get(PROFILES_URL + 'zero_profile.zip')
         upload_profile.write(source.content)
         upload_profile.close
 
