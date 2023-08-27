@@ -31,6 +31,7 @@ class GoLogin(object):
         self.local = options.get('local', False)
         self.spawn_browser = options.get('spawn_browser', True)
         self.credentials_enable_service = options.get('credentials_enable_service')
+        self.cleaningLocalCookies = options.get('cleaningLocalCookies', False)
         self.executablePath = ''
         self.is_new_cloud_browser = options.get('is_new_cloud_browser', True)
 
@@ -203,6 +204,11 @@ class GoLogin(object):
 
 
     def sanitizeProfile(self):
+
+        if (self.cleaningLocalCookies):
+            path_to_coockies = os.path.join(self.profile_path, 'Default', 'Network', 'Cookies')
+            os.remove(path_to_coockies)
+        
         remove_dirs = [
           'Default/Cache',
           'Default/Service Worker/CacheStorage',
@@ -616,8 +622,11 @@ class GoLogin(object):
         )
 
     def clearCookies(self, profile_id=None):
+        self.cleaningLocalCookies = True
+        
         profile = self.profile_id if profile_id==None else profile_id
         resp = requests.post(API_URL + '/browser/' + profile + '/cookies?cleanCookies=true', headers=self.headers(), json=[])
+
         if resp.status_code == 204:
             return {'status': 'success'}
         else:
