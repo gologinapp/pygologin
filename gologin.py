@@ -602,12 +602,11 @@ class GoLogin(object):
     def stopRemote(self):
         requests.delete(API_URL + '/browser/' + self.profile_id + '/web', headers=self.headers())
 
-    def clearCookies(self, clearLocal, profile_id=None):
+    def clearCookies(self, profile_id=None):
+        self.cleaningLocalCookies = True
+        
         profile = self.profile_id if profile_id==None else profile_id
         resp = requests.post(API_URL + '/browser/' + profile + '/cookies?cleanCookies=true', headers=self.headers(), json=[])
-        
-        if (clearLocal == True):
-            self.cleaningLocalCookies = True
 
         if resp.status_code == 204:
             return {'status': 'success'}
