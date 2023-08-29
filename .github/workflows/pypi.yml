@@ -24,6 +24,11 @@ jobs:
         python -m pip install --upgrade pip
         pip install setuptools wheel twine bump2version
 
+    - name: Set up Git identity
+      run: |
+        git config --global user.email "yuri@gologin.com"
+        git config --global user.name "Gologin"
+
     - name: Bump version
       run: bump2version patch
 
