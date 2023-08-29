@@ -30,7 +30,7 @@ jobs:
         git config --global user.name "Gologin"
 
     - name: Bump version
-      run: bump2version patch
+      run: bump2version --new-version commit patch
 
     - name: Build and publish
       env:
