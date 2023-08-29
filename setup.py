@@ -10,5 +10,7 @@ setup(
     author='GoLogin',
     author_email='yuri@gologin.com',
     description='Official GoLogin python package',
+    long_description=open('README.md').read(),
+    long_description_content_type='text/markdown',    
     url='https://github.com/gologinapp/pygologin',
 )
