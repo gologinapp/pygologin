@@ -1,0 +1,42 @@
+name: Publish to PyPI
+
+on:
+  push:
+    branches:
+      - main
+
+jobs:
+  publish:
+    name: Publish Package to PyPI
+    runs-on: ubuntu-latest
+
+    steps:
+    - name: Checkout repository
+      uses: actions/checkout@v2
+
+    - name: Set up Python
+      uses: actions/setup-python@v2
+      with:
+        python-version: 3.x
+
+    - name: Install dependencies
+      run: |
+        python -m pip install --upgrade pip
+        pip install setuptools wheel twine bump2version
+
+    - name: Set up Git identity
+      run: |
+        git config --global user.email "yuri@gologin.com"
+        git config --global user.name "Gologin"
+
+    - name: Bump version
+      run: bump2version --new-version $(date +"%Y.%m.%d%H%M%S") patch
+
+    - name: Build and publish
+      env:
+        TWINE_USERNAME: __token__
+        TWINE_PASSWORD: ${{ secrets.PYPI_TOKEN }}
+      run: |
+        python setup.py sdist bdist_wheel
+        twine upload dist/*
+
