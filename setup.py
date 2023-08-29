@@ -11,6 +11,7 @@ setup(
     author_email='yuri@gologin.com',
     description='Official GoLogin python package',
     long_description=open('README.md').read(),
-    long_description_content_type='text/markdown',    
+    long_description_content_type='text/markdown',
     url='https://github.com/gologinapp/pygologin',
+    python_requires='>=3.10'
 )
