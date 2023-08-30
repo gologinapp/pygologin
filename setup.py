@@ -13,5 +13,5 @@ setup(
     long_description=open('README.md').read(),
     long_description_content_type='text/markdown',
     url='https://github.com/gologinapp/pygologin',
-    python_requires='>=3.10'
+    python_requires='>=3.5'
 )
