@@ -10,7 +10,10 @@ GoLogin supports Linux, MacOS and Windows platforms.
 
 ### Installation
 
-clone or download this repository
+
+`pip3 install gologin`
+
+or clone this repository
 
 `git clone https://github.com/gologinapp/pygologin.git`
 
