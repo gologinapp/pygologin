@@ -142,11 +142,13 @@ class GoLogin(object):
                 time.sleep(1)
         return url
 
+
     def start(self):
         profile_path = self.createStartup()
         if self.spawn_browser == True:
             return self.spawnBrowser()
         return profile_path
+
 
     def zipdir(self, path, ziph):
         for root, dirs, files in os.walk(path):
@@ -160,6 +162,7 @@ class GoLogin(object):
                     ziph.write(path, path.replace(self.profile_path, ''))
                 except:
                     continue
+
 
     def waitUntilProfileUsing(self, try_count=0):
         if try_count>10:
@@ -185,6 +188,7 @@ class GoLogin(object):
             os.remove(self.profile_zip_path_upload)
             shutil.rmtree(self.profile_path)
 
+
     def commitProfile(self):
         zipf = zipfile.ZipFile(self.profile_zip_path_upload, 'w', zipfile.ZIP_DEFLATED)
         self.zipdir(self.profile_path, zipf)
@@ -204,7 +208,6 @@ class GoLogin(object):
 
 
     def sanitizeProfile(self):
-
         if (self.cleaningLocalCookies):
             path_to_coockies = os.path.join(self.profile_path, 'Default', 'Network', 'Cookies')
             os.remove(path_to_coockies)
@@ -233,9 +236,11 @@ class GoLogin(object):
                     shutil.rmtree(fpath)
                 except:
                     continue
-    
+
+
     def formatProxyUrl(self, proxy):
         return proxy.get('mode', 'http')+'://'+proxy.get('host','')+':'+str(proxy.get('port',80))
+
 
     def formatProxyUrlPassword(self, proxy):
         mode = "socks5h" if proxy.get("mode") == "socks5" else proxy.get("mode", "http")
@@ -268,6 +273,7 @@ class GoLogin(object):
         if data.get("statusCode")==404:
             raise Exception(data.get("error")+ ": " +data.get("message"))            
         return data
+
 
     def downloadProfileZip(self):
         s3path = self.profile.get('s3Path', '')
@@ -302,6 +308,7 @@ class GoLogin(object):
             self.createEmptyProfile()   
             self.extractProfileZip()
 
+
     def uploadEmptyProfile(self):
         print('uploadEmptyProfile')
         upload_profile = open(r'./gologin_zeroprofile.zip', 'wb')
@@ -309,12 +316,14 @@ class GoLogin(object):
         upload_profile.write(source.content)
         upload_profile.close
 
+
     def createEmptyProfile(self):
         print('createEmptyProfile')
         empty_profile = '../gologin_zeroprofile.zip'
         if not os.path.exists(empty_profile):
             empty_profile = 'gologin_zeroprofile.zip'
         shutil.copy(empty_profile, self.profile_zip_path)
+
 
     def extractProfileZip(self):
         with zipfile.ZipFile(self.profile_zip_path, 'r') as zip_ref:
@@ -466,6 +475,7 @@ class GoLogin(object):
         pfile = open(pref_file, 'w')
         json.dump(preferences, pfile)
 
+
     def createStartup(self):
         if self.local==False and os.path.exists(self.profile_path):
             try:
@@ -491,8 +501,10 @@ class GoLogin(object):
         os_type = options.get('os', 'lin')
         return json.loads(requests.get(API_URL + '/browser/fingerprint?os=' + os_type, headers=self.headers()).content.decode('utf-8'))
 
+
     def profiles(self):
         return json.loads(requests.get(API_URL + '/browser/', headers=self.headers()).content.decode('utf-8'))
+
 
     def create(self, options={}):
         profile_options = self.getRandomFingerprint(options)
@@ -545,15 +557,11 @@ class GoLogin(object):
             "families": profile_options.get('fonts')
           },
           "navigator": profile_options.get('navigator', {}),
-          # "screenHeight": 768,
-          # "screenWidth": 1024,
           "profile": json.dumps(profile_options),
         }
-    
-        # if profile.get('navigator'):
-        #   profile['navigator']['resolution'] = "1024x768"
-        # else:
-        #   profile['navigator'] = {'resolution': "1024x768"}
+
+        if options.get('storage'):
+            profile['storage'] = options.get('storage')
         
         for k,v in options.items():
             profile[k] = v
@@ -577,6 +585,7 @@ class GoLogin(object):
         #print("update", resp)
         #return json.loads(resp)
 
+
     def waitDebuggingUrl(self, delay_s, remote_orbita_url, try_count=3):
         url = remote_orbita_url + '/json/version'
         wsUrl = ''
@@ -597,6 +606,7 @@ class GoLogin(object):
 
         return {'status': 'success', 'wsUrl': wsUrl}
 
+
     def startRemote(self, delay_s=3):
         responseJson = requests.post(
             API_URL + '/browser/' + self.profile_id + '/web',
@@ -614,12 +624,14 @@ class GoLogin(object):
 
         return self.waitDebuggingUrl(delay_s, remote_orbita_url=remote_orbita_url)
 
+
     def stopRemote(self):
         response = requests.delete(
             API_URL + '/browser/' + self.profile_id + '/web',
             headers=self.headers(),
             params={'isNewCloudBrowser': self.is_new_cloud_browser}
         )
+
 
     def clearCookies(self, profile_id=None):
         self.cleaningLocalCookies = True
@@ -631,6 +643,7 @@ class GoLogin(object):
             return {'status': 'success'}
         else:
             return {'status': 'failure'}
+
 
     async def normalizePageView(self, page):
         if self.preferences.get("screenWidth")==None:

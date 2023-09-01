@@ -26,6 +26,29 @@ profile_id = gl.create({
         "mode": "alerted",
         "enabled": True,
     },
+    "storage": {
+        "local":        true,   # Local Storage is special browser caches that websites may use for user tracking in a way similar to cookies. 
+                                # Having them enabled is generally advised but may increase browser profile loading times.
+  
+        "extensions":   true,   # Extension storage is a special cotainer where a browser stores extensions and their parameter. 
+                                # Enable it if you need to install extensions from a browser interface.
+                            
+        "bookmarks":    true,   # This option enables saving bookmarks in a browser interface.
+                            
+        "history":      true,   # Warning! Enabling this option may increase the amount of data required 
+                                # to open/save a browser profile significantly. 
+                                # In the interests of security, you may wish to disable this feature, 
+                                # but it may make using GoLogin less convenient.
+                             
+        "passwords":    true,   # This option will save passwords stored in browsers.
+                                # It is used for pre-filling login forms on websites. 
+                                # All passwords are securely encrypted alongside all your data.
+                             
+        "session":      true,   # This option will save browser session. It is used to save last open tabs.
+                            
+        "indexedDb":    false   # IndexedDB is special browser caches that websites may use for user tracking in a way similar to cookies. 
+                                # Having them enabled is generally advised but may increase browser profile loading times.
+    }
 });
 
 print('profile id=', profile_id);
