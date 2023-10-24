@@ -239,7 +239,6 @@ class GoLogin(object):
 
         for d in remove_dirs:
             fpath = os.path.join(self.profile_path, d)
-            print("remove", fpath)
             if os.path.exists(fpath):
                 try:
                     shutil.rmtree(fpath)
