@@ -211,26 +211,35 @@ class GoLogin(object):
         if (self.cleaningLocalCookies):
             path_to_coockies = os.path.join(self.profile_path, 'Default', 'Network', 'Cookies')
             os.remove(path_to_coockies)
-        
+
+        SEPARATOR = os.sep
+
         remove_dirs = [
-          'Default/Cache',
-          'Default/Service Worker/CacheStorage',
-          'Default/Code Cache',
-          'Default/GPUCache',
-          'GrShaderCache',
-          'ShaderCache',
-          'biahpgbdmdkfgndcmfiipgcebobojjkp',
-          'afalakplffnnnlkncjhbmahjfjhmlkal',
-          'cffkpbalmllkdoenhmdmpbkajipdjfam',
-          'Dictionaries',
-          'enkheaiicpeffbfgjiklngbpkilnbkoi',
-          'oofiananboodjbbmdelgdommihjbkfag',
-          'SafetyTips',
-          'fonts',
+          f"Default{SEPARATOR}Cache",
+          f"Default{SEPARATOR}Service Worker",
+          f"Default{SEPARATOR}Code Cache",
+          f"Default{SEPARATOR}GPUCache",
+          f"Default{SEPARATOR}Service Worker",
+          f"Default{SEPARATOR}Extensions",
+          f"Default{SEPARATOR}IndexedDB",
+          f"Default{SEPARATOR}GPUCache",
+          f"Default{SEPARATOR}DawnCache",
+          f"Default{SEPARATOR}fonts_config",          
+          f"GrShaderCache",
+          f"ShaderCache",
+          f"biahpgbdmdkfgndcmfiipgcebobojjkp",
+          f"afalakplffnnnlkncjhbmahjfjhmlkal",
+          f"cffkpbalmllkdoenhmdmpbkajipdjfam",
+          f"Dictionaries",
+          f"enkheaiicpeffbfgjiklngbpkilnbkoi",
+          f"oofiananboodjbbmdelgdommihjbkfag",
+          f"SafetyTips",
+          f"fonts",
         ];
 
         for d in remove_dirs:
             fpath = os.path.join(self.profile_path, d)
+            print("remove", fpath)
             if os.path.exists(fpath):
                 try:
                     shutil.rmtree(fpath)

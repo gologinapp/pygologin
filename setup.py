@@ -5,7 +5,7 @@ with open("requirements.txt", "r") as f:
 
 setup(
     name='gologin',
-    version='0.1.0',
+    version='0.1.1',
     packages=find_packages(),
     install_requires=install_requires,
     author='GoLogin',
