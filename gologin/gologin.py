@@ -27,10 +27,11 @@ class GoLogin(object):
         self.tmpdir = options.get('tmpdir', tempfile.gettempdir())
         self.address = options.get('address', '127.0.0.1')
         self.extra_params = options.get('extra_params', [])
-        self.port  = options.get('port', 3500)
+        self.port = options.get('port', 3500)
         self.local = options.get('local', False)
         self.spawn_browser = options.get('spawn_browser', True)
-        self.credentials_enable_service = options.get('credentials_enable_service')
+        self.credentials_enable_service = options.get(
+            'credentials_enable_service')
         self.cleaningLocalCookies = options.get('cleaningLocalCookies', False)
         self.executablePath = ''
         self.is_new_cloud_browser = options.get('is_new_cloud_browser', True)
@@ -40,15 +41,18 @@ class GoLogin(object):
         try:
             for orbita_browser in os.listdir(browser_gologin):
                 if not orbita_browser.endswith('.zip') and not orbita_browser.endswith('.tar.gz') and orbita_browser.startswith('orbita-browser'):
-                    self.executablePath = options.get('executablePath', os.path.join(browser_gologin, orbita_browser, 'chrome'))
-                    if not os.path.exists(self.executablePath) and not orbita_browser.endswith('.tar.gz') and sys.platform=="darwin":
-                        self.executablePath = os.path.join(home, browser_gologin, orbita_browser, 'Orbita-Browser.app/Contents/MacOS/Orbita')
+                    self.executablePath = options.get('executablePath', os.path.join(
+                        browser_gologin, orbita_browser, 'chrome'))
+                    if not os.path.exists(self.executablePath) and not orbita_browser.endswith('.tar.gz') and sys.platform == "darwin":
+                        self.executablePath = os.path.join(
+                            home, browser_gologin, orbita_browser, 'Orbita-Browser.app/Contents/MacOS/Orbita')
 
         except Exception as e:
             self.executablePath = ''
 
         if not self.executablePath:
-            raise Exception(f"Orbita executable file not found in HOME ({browser_gologin}). Is gologin installed on your system?")
+            raise Exception(
+                f"Orbita executable file not found in HOME ({browser_gologin}). Is gologin installed on your system?")
 
         if self.extra_params:
             print('extra_params', self.extra_params)
@@ -58,66 +62,70 @@ class GoLogin(object):
 
     def setProfileId(self, profile_id):
         self.profile_id = profile_id
-        if self.profile_id==None:
+        if self.profile_id == None:
             return
-        self.profile_path = os.path.join(self.tmpdir, 'gologin_' + self.profile_id)
-        self.profile_zip_path = os.path.join(self.tmpdir, 'gologin_' + self.profile_id+'.zip')
-        self.profile_zip_path_upload = os.path.join(self.tmpdir, 'gologin_' + self.profile_id+'_upload.zip')
-
+        self.profile_path = os.path.join(
+            self.tmpdir, 'gologin_' + self.profile_id)
+        self.profile_zip_path = os.path.join(
+            self.tmpdir, 'gologin_' + self.profile_id+'.zip')
+        self.profile_zip_path_upload = os.path.join(
+            self.tmpdir, 'gologin_' + self.profile_id+'_upload.zip')
 
     def loadExtensions(self):
         profile = self.profile
         chromeExtensions = profile.get('chromeExtensions')
         extensionsManagerInst = ExtensionsManager()
         pathToExt = ''
-        profileExtensionsCheck = []        
+        profileExtensionsCheck = []
         for ext in chromeExtensions:
             ver = extensionsManagerInst.downloadExt(ext)
-            pathToExt += os.path.join(pathlib.Path.home(), '.gologin', 'extensions', 'chrome-extensions', ext + '@' + ver + ',')
-            profileExtensionsCheck.append(os.path.join(pathlib.Path.home(), '.gologin', 'extensions', 'chrome-extensions', ext + '@' + ver))
+            pathToExt += os.path.join(pathlib.Path.home(), '.gologin',
+                                      'extensions', 'chrome-extensions', ext + '@' + ver + ',')
+            profileExtensionsCheck.append(os.path.join(pathlib.Path.home(
+            ), '.gologin', 'extensions', 'chrome-extensions', ext + '@' + ver))
 
         pref_file = os.path.join(self.profile_path, 'Default', 'Preferences')
         with open(pref_file, 'r', encoding="utf-8") as pfile:
             preferences = json.load(pfile)
 
-        noteExtExist = ExtensionsManager().extensionIsAlreadyExisted(preferences, profileExtensionsCheck)
+        noteExtExist = ExtensionsManager().extensionIsAlreadyExisted(
+            preferences, profileExtensionsCheck)
 
         if noteExtExist:
             return
         else:
             return pathToExt
 
-
     def spawnBrowser(self):
         proxy = self.proxy
         proxy_host = ''
         if proxy:
-            if proxy.get('mode')==None or proxy.get('mode')=='geolocation':
+            if proxy.get('mode') == None or proxy.get('mode') == 'geolocation':
                 proxy['mode'] = 'http'
-            proxy_host = proxy.get('host')            
+            proxy_host = proxy.get('host')
             proxy = self.formatProxyUrl(proxy)
-        
+
         tz = self.tz.get('timezone')
 
         params = [
-        self.executablePath,
-        '--remote-debugging-port='+str(self.port),
-        '--user-data-dir='+self.profile_path, 
-        '--password-store=basic', 
-        '--tz='+tz, 
-        '--gologin-profile='+self.profile_name, 
-        '--lang=en-US',
+            self.executablePath,
+            '--remote-debugging-port='+str(self.port),
+            '--user-data-dir='+self.profile_path,
+            '--password-store=basic',
+            '--tz='+tz,
+            '--gologin-profile='+self.profile_name,
+            '--lang=en-US',
         ]
 
         chromeExtensions = self.profile.get('chromeExtensions')
-        if chromeExtensions and len(chromeExtensions)>0:
+        if chromeExtensions and len(chromeExtensions) > 0:
             paths = self.loadExtensions()
             if paths is not None:
                 extToParams = '--load-extension=' + paths
                 params.append(extToParams)
 
         if proxy:
-            hr_rules = '"MAP * 0.0.0.0 , EXCLUDE %s"'%(proxy_host)
+            hr_rules = '"MAP * 0.0.0.0 , EXCLUDE %s"' % (proxy_host)
             params.append('--proxy-server='+proxy)
             params.append('--host-resolver-rules='+hr_rules)
 
@@ -133,7 +141,7 @@ class GoLogin(object):
 
         try_count = 1
         url = str(self.address) + ':' + str(self.port)
-        while try_count<100:
+        while try_count < 100:
             try:
                 data = requests.get('http://'+url+'/json').content
                 break
@@ -142,13 +150,11 @@ class GoLogin(object):
                 time.sleep(1)
         return url
 
-
     def start(self):
         profile_path = self.createStartup()
         if self.spawn_browser == True:
             return self.spawnBrowser()
         return profile_path
-
 
     def zipdir(self, path, ziph):
         for root, dirs, files in os.walk(path):
@@ -163,9 +169,8 @@ class GoLogin(object):
                 except:
                     continue
 
-
     def waitUntilProfileUsing(self, try_count=0):
-        if try_count>10:
+        if try_count > 10:
             return
         time.sleep(1)
         profile_path = self.profile_path
@@ -173,9 +178,8 @@ class GoLogin(object):
             try:
                 os.rename(profile_path, profile_path)
             except OSError as e:
-                print("waiting chrome termination") 
-                self.waitUntilProfileUsing(try_count+1)   
-
+                print("waiting chrome termination")
+                self.waitUntilProfileUsing(try_count+1)
 
     def stop(self):
         for proc in psutil.process_iter(['pid']):
@@ -183,59 +187,60 @@ class GoLogin(object):
                 proc.kill()
         self.waitUntilProfileUsing()
         self.sanitizeProfile()
-        if self.local==False:
+        if self.local == False:
             self.commitProfile()
             os.remove(self.profile_zip_path_upload)
             shutil.rmtree(self.profile_path)
 
-
     def commitProfile(self):
-        zipf = zipfile.ZipFile(self.profile_zip_path_upload, 'w', zipfile.ZIP_DEFLATED)
+        zipf = zipfile.ZipFile(
+            self.profile_zip_path_upload, 'w', zipfile.ZIP_DEFLATED)
         self.zipdir(self.profile_path, zipf)
         zipf.close()
-        
+
         headers = {
             'Authorization': 'Bearer ' + self.access_token,
             'User-Agent': 'Selenium-API'
         }
         # print('profile size=', os.stat(self.profile_zip_path_upload).st_size)
 
-        signedUrl = requests.get(API_URL + '/browser/' + self.profile_id + '/storage-signature', headers=headers).content.decode('utf-8')
+        signedUrl = requests.get(API_URL + '/browser/' + self.profile_id +
+                                 '/storage-signature', headers=headers).content.decode('utf-8')
 
         requests.put(signedUrl, data=open(self.profile_zip_path_upload, 'rb'))
 
         # print('commit profile complete')
 
-
     def sanitizeProfile(self):
         if (self.cleaningLocalCookies):
-            path_to_coockies = os.path.join(self.profile_path, 'Default', 'Network', 'Cookies')
+            path_to_coockies = os.path.join(
+                self.profile_path, 'Default', 'Network', 'Cookies')
             os.remove(path_to_coockies)
 
         SEPARATOR = os.sep
 
         remove_dirs = [
-          f"Default{SEPARATOR}Cache",
-          f"Default{SEPARATOR}Service Worker",
-          f"Default{SEPARATOR}Code Cache",
-          f"Default{SEPARATOR}GPUCache",
-          f"Default{SEPARATOR}Service Worker",
-          f"Default{SEPARATOR}Extensions",
-          f"Default{SEPARATOR}IndexedDB",
-          f"Default{SEPARATOR}GPUCache",
-          f"Default{SEPARATOR}DawnCache",
-          f"Default{SEPARATOR}fonts_config",          
-          f"GrShaderCache",
-          f"ShaderCache",
-          f"biahpgbdmdkfgndcmfiipgcebobojjkp",
-          f"afalakplffnnnlkncjhbmahjfjhmlkal",
-          f"cffkpbalmllkdoenhmdmpbkajipdjfam",
-          f"Dictionaries",
-          f"enkheaiicpeffbfgjiklngbpkilnbkoi",
-          f"oofiananboodjbbmdelgdommihjbkfag",
-          f"SafetyTips",
-          f"fonts",
-        ];
+            f"Default{SEPARATOR}Cache",
+            f"Default{SEPARATOR}Service Worker",
+            f"Default{SEPARATOR}Code Cache",
+            f"Default{SEPARATOR}GPUCache",
+            f"Default{SEPARATOR}Service Worker",
+            f"Default{SEPARATOR}Extensions",
+            f"Default{SEPARATOR}IndexedDB",
+            f"Default{SEPARATOR}GPUCache",
+            f"Default{SEPARATOR}DawnCache",
+            f"Default{SEPARATOR}fonts_config",
+            f"GrShaderCache",
+            f"ShaderCache",
+            f"biahpgbdmdkfgndcmfiipgcebobojjkp",
+            f"afalakplffnnnlkncjhbmahjfjhmlkal",
+            f"cffkpbalmllkdoenhmdmpbkajipdjfam",
+            f"Dictionaries",
+            f"enkheaiicpeffbfgjiklngbpkilnbkoi",
+            f"oofiananboodjbbmdelgdommihjbkfag",
+            f"SafetyTips",
+            f"fonts",
+        ]
 
         for d in remove_dirs:
             fpath = os.path.join(self.profile_path, d)
@@ -245,22 +250,20 @@ class GoLogin(object):
                 except:
                     continue
 
-
     def formatProxyUrl(self, proxy):
-        return proxy.get('mode', 'http')+'://'+proxy.get('host','')+':'+str(proxy.get('port',80))
-
+        return proxy.get('mode', 'http')+'://'+proxy.get('host', '')+':'+str(proxy.get('port', 80))
 
     def formatProxyUrlPassword(self, proxy):
-        mode = "socks5h" if proxy.get("mode") == "socks5" else proxy.get("mode", "http")
-        if proxy.get('username', '')=='':
-            return mode+'://'+proxy.get('host','')+':'+str(proxy.get('port',80))
+        mode = "socks5h" if proxy.get(
+            "mode") == "socks5" else proxy.get("mode", "http")
+        if proxy.get('username', '') == '':
+            return mode+'://'+proxy.get('host', '')+':'+str(proxy.get('port', 80))
         else:
-            return proxy.get('mode', 'http')+'://'+proxy.get('username','')+':'+proxy.get('password')+'@'+proxy.get('host','')+':'+str(proxy.get('port',80))
-
+            return proxy.get('mode', 'http')+'://'+proxy.get('username', '')+':'+proxy.get('password')+'@'+proxy.get('host', '')+':'+str(proxy.get('port', 80))
 
     def getTimeZone(self):
         proxy = self.proxy
-        if proxy:            
+        if proxy:
             proxies = {
                 'http': self.formatProxyUrlPassword(proxy),
                 'https': self.formatProxyUrlPassword(proxy)
@@ -270,52 +273,51 @@ class GoLogin(object):
             data = requests.get('https://time.gologin.com')
         return json.loads(data.content.decode('utf-8'))
 
-
     def getProfile(self, profile_id=None):
-        profile = self.profile_id if profile_id==None else profile_id
+        profile = self.profile_id if profile_id == None else profile_id
         headers = {
             'Authorization': 'Bearer ' + self.access_token,
             'User-Agent': 'Selenium-API'
         }
-        data = json.loads(requests.get(API_URL + '/browser/' + profile, headers=headers).content.decode('utf-8'))
-        if data.get("statusCode")==404:
-            raise Exception(data.get("error")+ ": " +data.get("message"))            
+        data = json.loads(requests.get(API_URL + '/browser/' +
+                          profile, headers=headers).content.decode('utf-8'))
+        if data.get("statusCode") == 404:
+            raise Exception(data.get("error") + ": " + data.get("message"))
         return data
-
 
     def downloadProfileZip(self):
         s3path = self.profile.get('s3Path', '')
         data = ''
-        if s3path=='':
+        if s3path == '':
             # print('downloading profile direct')
             headers = {
                 'Authorization': 'Bearer ' + self.access_token,
                 'User-Agent': 'Selenium-API'
             }
-            data = requests.get(API_URL + '/browser/'+self.profile_id, headers=headers).content
+            data = requests.get(API_URL + '/browser/' +
+                                self.profile_id, headers=headers).content
         else:
             # print('downloading profile s3')
             s3url = PROFILES_URL + s3path.replace(' ', '+')
             data = requests.get(s3url).content
 
-        if len(data)==0:
-            self.createEmptyProfile()            
+        if len(data) == 0:
+            self.createEmptyProfile()
         else:
             with open(self.profile_zip_path, 'wb') as f:
                 f.write(data)
-        
+
         try:
             self.extractProfileZip()
         except:
             self.uploadEmptyProfile()
-            self.createEmptyProfile()   
+            self.createEmptyProfile()
             self.extractProfileZip()
 
         if not os.path.exists(os.path.join(self.profile_path, 'Default', 'Preferences')):
             self.uploadEmptyProfile()
-            self.createEmptyProfile()   
+            self.createEmptyProfile()
             self.extractProfileZip()
-
 
     def uploadEmptyProfile(self):
         print('uploadEmptyProfile')
@@ -324,7 +326,6 @@ class GoLogin(object):
         upload_profile.write(source.content)
         upload_profile.close
 
-
     def createEmptyProfile(self):
         print('createEmptyProfile')
         empty_profile = '../gologin_zeroprofile.zip'
@@ -332,29 +333,26 @@ class GoLogin(object):
             empty_profile = 'gologin_zeroprofile.zip'
         shutil.copy(empty_profile, self.profile_zip_path)
 
-
     def extractProfileZip(self):
         with zipfile.ZipFile(self.profile_zip_path, 'r') as zip_ref:
-            zip_ref.extractall(self.profile_path)       
+            zip_ref.extractall(self.profile_path)
         os.remove(self.profile_zip_path)
-
 
     def getGeolocationParams(self, profileGeolocationParams, tzGeolocationParams):
         if profileGeolocationParams.get('fillBasedOnIp'):
-          return {
-            'mode': profileGeolocationParams['mode'],
-            'latitude': float(tzGeolocationParams['latitude']),
-            'longitude': float(tzGeolocationParams['longitude']),
-            'accuracy': float(tzGeolocationParams['accuracy']),
-          }
-        
-        return {
-          'mode': profileGeolocationParams['mode'],
-          'latitude': profileGeolocationParams['latitude'],
-          'longitude': profileGeolocationParams['longitude'],
-          'accuracy': profileGeolocationParams['accuracy'],
-        }
+            return {
+                'mode': profileGeolocationParams['mode'],
+                'latitude': float(tzGeolocationParams['latitude']),
+                'longitude': float(tzGeolocationParams['longitude']),
+                'accuracy': float(tzGeolocationParams['accuracy']),
+            }
 
+        return {
+            'mode': profileGeolocationParams['mode'],
+            'latitude': profileGeolocationParams['latitude'],
+            'longitude': profileGeolocationParams['longitude'],
+            'accuracy': profileGeolocationParams['accuracy'],
+        }
 
     def convertPreferences(self, preferences):
         resolution = preferences.get('resolution', '1920x1080')
@@ -369,59 +367,67 @@ class GoLogin(object):
             'accuracy': self.tz.get('accuracy', 0),
         }
 
-        preferences['geoLocation'] = self.getGeolocationParams(preferences['geolocation'], tzGeoLocation)
+        preferences['geoLocation'] = self.getGeolocationParams(
+            preferences['geolocation'], tzGeoLocation)
 
         preferences['webRtc'] = {
-            'mode': 'public' if preferences.get('webRTC',{}).get('mode') == 'alerted' else preferences.get('webRTC',{}).get('mode'),
-            'publicIP': self.tz['ip'] if preferences.get('webRTC',{}).get('fillBasedOnIp') else preferences.get('webRTC',{}).get('publicIp'),
-            'localIps': preferences.get('webRTC',{}).get('localIps', [])
+            'mode': 'public' if preferences.get('webRTC', {}).get('mode') == 'alerted' else preferences.get('webRTC', {}).get('mode'),
+            'publicIP': self.tz['ip'] if preferences.get('webRTC', {}).get('fillBasedOnIp') else preferences.get('webRTC', {}).get('publicIp'),
+            'localIps': preferences.get('webRTC', {}).get('localIps', [])
         }
 
         preferences['timezone'] = {
             'id': self.tz.get('timezone')
         }
 
-        preferences['webgl_noise_value'] = preferences.get('webGL', {}).get('noise')
-        preferences['get_client_rects_noise'] = preferences.get('webGL', {}).get('getClientRectsNoise')
+        preferences['webgl_noise_value'] = preferences.get(
+            'webGL', {}).get('noise')
+        preferences['get_client_rects_noise'] = preferences.get(
+            'webGL', {}).get('getClientRectsNoise')
         preferences['canvasMode'] = preferences.get('canvas', {}).get('mode')
         preferences['canvasNoise'] = preferences.get('canvas', {}).get('noise')
         if preferences.get('clientRects', {}).get('mode') == 'noise':
             preferences['client_rects_noise_enable'] = True
-        preferences['audioContextMode'] = preferences.get('audioContext', {}).get('mode')
+        preferences['audioContextMode'] = preferences.get(
+            'audioContext', {}).get('mode')
         preferences['audioContext'] = {
-            'enable': preferences.get('audioContextMode')!= 'off',
+            'enable': preferences.get('audioContextMode') != 'off',
             'noiseValue': preferences.get('audioContext').get('noise'),
         }
 
         preferences['webgl'] = {
             'metadata': {
-              'vendor': preferences.get('webGLMetadata', {}).get('vendor'),
-              'renderer': preferences.get('webGLMetadata', {}).get('renderer'),
-              'mode': preferences.get('webGLMetadata', {}).get('mode') == 'mask',
+                'vendor': preferences.get('webGLMetadata', {}).get('vendor'),
+                'renderer': preferences.get('webGLMetadata', {}).get('renderer'),
+                'mode': preferences.get('webGLMetadata', {}).get('mode') == 'mask',
             }
         }
 
         if preferences.get('navigator', {}).get('userAgent'):
-            preferences['userAgent'] = preferences.get('navigator', {}).get('userAgent')
+            preferences['userAgent'] = preferences.get(
+                'navigator', {}).get('userAgent')
 
         if preferences.get('navigator', {}).get('doNotTrack'):
-            preferences['doNotTrack'] = preferences.get('navigator', {}).get('doNotTrack')
-        
+            preferences['doNotTrack'] = preferences.get(
+                'navigator', {}).get('doNotTrack')
+
         if preferences.get('navigator', {}).get('hardwareConcurrency'):
-            preferences['hardwareConcurrency'] = preferences.get('navigator', {}).get('hardwareConcurrency')
+            preferences['hardwareConcurrency'] = preferences.get(
+                'navigator', {}).get('hardwareConcurrency')
 
         if preferences.get('navigator', {}).get('language'):
-            preferences['languages'] = preferences.get('navigator', {}).get('language')
-        
+            preferences['languages'] = preferences.get(
+                'navigator', {}).get('language')
+
         if preferences.get('isM1', False):
             preferences["is_m1"] = preferences.get('isM1', False)
 
-        if preferences.get('os')=="android":
-            devicePixelRatio = preferences.get("devicePixelRatio");
-            deviceScaleFactorCeil = math.ceil(devicePixelRatio or 3.5);
-            deviceScaleFactor = devicePixelRatio;
+        if preferences.get('os') == "android":
+            devicePixelRatio = preferences.get("devicePixelRatio")
+            deviceScaleFactorCeil = math.ceil(devicePixelRatio or 3.5)
+            deviceScaleFactor = devicePixelRatio
             if deviceScaleFactorCeil == devicePixelRatio:
-                deviceScaleFactor += 0.00000001;
+                deviceScaleFactor += 0.00000001
 
             preferences["mobile"] = {
                 "enable": True,
@@ -432,71 +438,68 @@ class GoLogin(object):
 
         return preferences
 
-
     def updatePreferences(self):
         pref_file = os.path.join(self.profile_path, 'Default', 'Preferences')
         with open(pref_file, 'r', encoding="utf-8") as pfile:
-            preferences = json.load(pfile)    
+            preferences = json.load(pfile)
         profile = self.profile
         profile['profile_id'] = self.profile_id
         proxy = self.profile.get('proxy')
         # print('proxy=', proxy)
-        if proxy and (proxy.get('mode')=='gologin' or proxy.get('mode')=='tor'):
+        if proxy and (proxy.get('mode') == 'gologin' or proxy.get('mode') == 'tor'):
             autoProxyServer = profile.get('autoProxyServer')
             splittedAutoProxyServer = autoProxyServer.split('://')
             splittedProxyAddress = splittedAutoProxyServer[1].split(':')
             port = splittedProxyAddress[1]
 
             proxy = {
-              'mode': 'http',
-              'host': splittedProxyAddress[0],
-              'port': port,
-              'username': profile.get('autoProxyUsername'),
-              'password': profile.get('autoProxyPassword'),
-              'timezone': profile.get('autoProxyTimezone', 'us'),
+                'mode': 'http',
+                'host': splittedProxyAddress[0],
+                'port': port,
+                'username': profile.get('autoProxyUsername'),
+                'password': profile.get('autoProxyPassword'),
+                'timezone': profile.get('autoProxyTimezone', 'us'),
             }
-            
+
             profile['proxy']['username'] = profile.get('autoProxyUsername')
             profile['proxy']['password'] = profile.get('autoProxyPassword')
-        
-        if not proxy or proxy.get('mode')=='none':
+
+        if not proxy or proxy.get('mode') == 'none':
             print('no proxy')
             proxy = None
 
         if proxy and proxy.get('mode') == 'geolocation':
             proxy['mode'] = 'http'
-        
-        if proxy and proxy.get('mode')==None:
+
+        if proxy and proxy.get('mode') == None:
             proxy['mode'] = 'http'
 
         self.proxy = proxy
         self.profile_name = profile.get('name')
-        if self.profile_name==None:
+        if self.profile_name == None:
             print('empty profile name')
             print('profile=', profile)
             exit()
-            
-        gologin = self.convertPreferences(profile)        
-        if self.credentials_enable_service!=None:
+
+        gologin = self.convertPreferences(profile)
+        if self.credentials_enable_service != None:
             preferences['credentials_enable_service'] = self.credentials_enable_service
         preferences['gologin'] = gologin
         pfile = open(pref_file, 'w')
         json.dump(preferences, pfile)
 
-
     def createStartup(self):
-        if self.local==False and os.path.exists(self.profile_path):
+        if self.local == False and os.path.exists(self.profile_path):
             try:
                 shutil.rmtree(self.profile_path)
             except:
                 print("error removing profile", self.profile_path)
         self.profile = self.getProfile()
-        if self.local==False:
+        if self.local == False:
             self.downloadProfileZip()
         self.updatePreferences()
-        
-        return self.profile_path
 
+        return self.profile_path
 
     def headers(self):
         return {
@@ -504,15 +507,12 @@ class GoLogin(object):
             'User-Agent': 'Selenium-API'
         }
 
-
     def getRandomFingerprint(self, options):
         os_type = options.get('os', 'lin')
         return json.loads(requests.get(API_URL + '/browser/fingerprint?os=' + os_type, headers=self.headers()).content.decode('utf-8'))
 
-
     def profiles(self):
-        return json.loads(requests.get(API_URL + '/browser/', headers=self.headers()).content.decode('utf-8'))
-
+        return json.loads(requests.get(API_URL + '/browser', headers=self.headers()).content.decode('utf-8'))
 
     def create(self, options={}):
         profile_options = self.getRandomFingerprint(options)
@@ -527,7 +527,7 @@ class GoLogin(object):
             if resolution == 'random' or userAgent == 'random':
                 options.pop('navigator')
             if resolution != 'random' and userAgent != 'random':
-                options.pop('navigator')            
+                options.pop('navigator')
             if resolution == 'random' and userAgent != 'random':
                 profile_options['navigator']['userAgent'] = userAgent
             if userAgent == 'random' and resolution != 'random':
@@ -539,66 +539,66 @@ class GoLogin(object):
                 profile_options['navigator']['hardwareConcurrency'] = hardwareConcurrency
             if deviceMemory != 'random' and userAgent != 'random' and deviceMemory != None:
                 profile_options['navigator']['deviceMemory'] = deviceMemory
-                       
+
             profile_options['navigator']['language'] = language
 
         profile = {
-          "name": "default_name",
-          "notes": "auto generated",
-          "browserType": "chrome",
-          "os": "lin",
-          "googleServicesEnabled": True,
-          "lockEnabled": False,
-          "audioContext": {
-            "mode": "noise"
-          },
-          "canvas": {
-            "mode": "noise"
-          },
-          "webRTC": {
-            "mode": "disabled",
-            "enabled": False,
-            "customize": True,
-            "fillBasedOnIp": True
-          },
-          "fonts": {
-            "families": profile_options.get('fonts')
-          },
-          "navigator": profile_options.get('navigator', {}),
-          "profile": json.dumps(profile_options),
+            "name": "default_name",
+            "notes": "auto generated",
+            "browserType": "chrome",
+            "os": "lin",
+            "googleServicesEnabled": True,
+            "lockEnabled": False,
+            "audioContext": {
+                "mode": "noise"
+            },
+            "canvas": {
+                "mode": "noise"
+            },
+            "webRTC": {
+                "mode": "disabled",
+                "enabled": False,
+                "customize": True,
+                "fillBasedOnIp": True
+            },
+            "fonts": {
+                "families": profile_options.get('fonts')
+            },
+            "navigator": profile_options.get('navigator', {}),
+            "profile": json.dumps(profile_options),
         }
 
         if options.get('storage'):
             profile['storage'] = options.get('storage')
-        
-        for k,v in options.items():
+
+        for k, v in options.items():
             profile[k] = v
 
-        response = json.loads(requests.post(API_URL + '/browser/', headers=self.headers(), json=profile).content.decode('utf-8'))
+        response = json.loads(requests.post(
+            API_URL + '/browser', headers=self.headers(), json=profile).content.decode('utf-8'))
         return response.get('id')
 
-
     def delete(self, profile_id=None):
-        profile = self.profile_id if profile_id==None else profile_id
-        requests.delete(API_URL + '/browser/' + profile, headers=self.headers())
-
+        profile = self.profile_id if profile_id == None else profile_id
+        requests.delete(API_URL + '/browser/' +
+                        profile, headers=self.headers())
 
     def update(self, options):
         self.profile_id = options.get('id')
         profile = self.getProfile()
-        #print("profile", profile)
-        for k,v in options.items():
+        # print("profile", profile)
+        for k, v in options.items():
             profile[k] = v
-        resp = requests.put(API_URL + '/browser/' + self.profile_id, headers=self.headers(), json=profile).content.decode('utf-8')
-        #print("update", resp)
-        #return json.loads(resp)
-
+        resp = requests.put(API_URL + '/browser/' + self.profile_id,
+                            headers=self.headers(), json=profile).content.decode('utf-8')
+        # print("update", resp)
+        # return json.loads(resp)
 
     def waitDebuggingUrl(self, delay_s, remote_orbita_url, try_count=3):
         url = remote_orbita_url + '/json/version'
         wsUrl = ''
         try_number = 1
-        while wsUrl=='':
+        while wsUrl == '':
             time.sleep(delay_s)
             try:
                 response = json.loads(requests.get(url).content)
@@ -609,11 +609,12 @@ class GoLogin(object):
                 return {'status': 'failure', 'wsUrl': wsUrl}
             try_number += 1
 
-        remote_orbita_url_without_protocol = remote_orbita_url.replace('https://', '')
-        wsUrl = wsUrl.replace('ws://', 'wss://').replace('127.0.0.1', remote_orbita_url_without_protocol)
+        remote_orbita_url_without_protocol = remote_orbita_url.replace(
+            'https://', '')
+        wsUrl = wsUrl.replace(
+            'ws://', 'wss://').replace('127.0.0.1', remote_orbita_url_without_protocol)
 
         return {'status': 'success', 'wsUrl': wsUrl}
-
 
     def startRemote(self, delay_s=3):
         responseJson = requests.post(
@@ -632,7 +633,6 @@ class GoLogin(object):
 
         return self.waitDebuggingUrl(delay_s, remote_orbita_url=remote_orbita_url)
 
-
     def stopRemote(self):
         response = requests.delete(
             API_URL + '/browser/' + self.profile_id + '/web',
@@ -640,27 +640,28 @@ class GoLogin(object):
             params={'isNewCloudBrowser': self.is_new_cloud_browser}
         )
 
-
     def clearCookies(self, profile_id=None):
         self.cleaningLocalCookies = True
-        
-        profile = self.profile_id if profile_id==None else profile_id
-        resp = requests.post(API_URL + '/browser/' + profile + '/cookies?cleanCookies=true', headers=self.headers(), json=[])
+
+        profile = self.profile_id if profile_id == None else profile_id
+        resp = requests.post(API_URL + '/browser/' + profile +
+                             '/cookies?cleanCookies=true', headers=self.headers(), json=[])
 
         if resp.status_code == 204:
             return {'status': 'success'}
         else:
             return {'status': 'failure'}
 
-
     async def normalizePageView(self, page):
-        if self.preferences.get("screenWidth")==None:
+        if self.preferences.get("screenWidth") == None:
             self.profile = self.getProfile()
-            self.preferences['screenWidth'] = int(self.profile.get("navigator").get("resolution").split('x')[0])
-            self.preferences['screenHeight'] = int(self.profile.get("navigator").get("resolution").split('x')[1])
+            self.preferences['screenWidth'] = int(self.profile.get(
+                "navigator").get("resolution").split('x')[0])
+            self.preferences['screenHeight'] = int(
+                self.profile.get("navigator").get("resolution").split('x')[1])
         width = self.preferences.get("screenWidth")
         height = self.preferences.get("screenHeight")
-        await page.setViewport({"width": width, "height": height});
+        await page.setViewport({"width": width, "height": height})
 
 
 def getRandomPort():
