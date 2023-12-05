@@ -268,9 +268,9 @@ class GoLogin(object):
                 'http': self.formatProxyUrlPassword(proxy),
                 'https': self.formatProxyUrlPassword(proxy)
             }
-            data = requests.get('https://time.gologin.com', proxies=proxies)
+            data = requests.get('https://geo.myip.link', proxies=proxies)
         else:
-            data = requests.get('https://time.gologin.com')
+            data = requests.get('https://geo.myip.link')
         return json.loads(data.content.decode('utf-8'))
 
     def getProfile(self, profile_id=None):
