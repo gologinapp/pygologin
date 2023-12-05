@@ -18,6 +18,7 @@ from .extensionsManager import ExtensionsManager
 
 API_URL = 'https://api.gologin.com'
 PROFILES_URL = 'https://gprofiles-new.gologin.com/'
+GET_TIMEZONE_URL = 'https://geo.myip.link'
 
 
 class GoLogin(object):
@@ -268,9 +269,9 @@ class GoLogin(object):
                 'http': self.formatProxyUrlPassword(proxy),
                 'https': self.formatProxyUrlPassword(proxy)
             }
-            data = requests.get('https://time.gologin.com', proxies=proxies)
+            data = requests.get(GET_TIMEZONE_URL, proxies=proxies)
         else:
-            data = requests.get('https://time.gologin.com')
+            data = requests.get(GET_TIMEZONE_URL)
         return json.loads(data.content.decode('utf-8'))
 
     def getProfile(self, profile_id=None):
