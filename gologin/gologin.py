@@ -35,6 +35,7 @@ class GoLogin(object):
             'credentials_enable_service')
         self.cleaningLocalCookies = options.get('cleaningLocalCookies', False)
         self.executablePath = ''
+        self.is_cloud_headless = options.get('is_cloud_headless', True)
         self.is_new_cloud_browser = options.get('is_new_cloud_browser', True)
 
         home = str(pathlib.Path.home())
@@ -621,7 +622,7 @@ class GoLogin(object):
         responseJson = requests.post(
             API_URL + '/browser/' + self.profile_id + '/web',
             headers=self.headers(),
-            json={'isNewCloudBrowser': self.is_new_cloud_browser}
+            json={'isNewCloudBrowser': self.is_new_cloud_browser, 'isHeadless': self.is_cloud_headless}
         ).content.decode('utf-8')
         response = json.loads(responseJson)
         print('profileResponse', response)
