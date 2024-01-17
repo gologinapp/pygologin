@@ -446,6 +446,7 @@ class GoLogin(object):
             preferences = json.load(pfile)
         profile = self.profile
         profile['profile_id'] = self.profile_id
+        profile['deviceMemory'] = preferences['gologin']['deviceMemory']
         proxy = self.profile.get('proxy')
         # print('proxy=', proxy)
         if proxy and (proxy.get('mode') == 'gologin' or proxy.get('mode') == 'tor'):
