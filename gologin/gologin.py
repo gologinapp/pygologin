@@ -447,10 +447,16 @@ class GoLogin(object):
         profile = self.profile
         profile['profile_id'] = self.profile_id
 
-        if ('deviceMemory' in preferences['gologin']['navigator']):
-            profile['deviceMemory'] = preferences['gologin']['navigator']['deviceMemory']*1024
-        if ('deviceMemory' in preferences['gologin']):
-            profile['deviceMemory'] = preferences['gologin']['deviceMemory']
+        if ('navigator' in profile):
+            if ('deviceMemory' in profile['navigator']):
+                profile['deviceMemory'] = profile['navigator']['deviceMemory']*1024
+
+        if ('gologin' in preferences): 
+            if ('navigator' in preferences['gologin']):
+                if ('deviceMemory' in preferences['gologin']['navigator']):
+                    profile['deviceMemory'] = preferences['gologin']['navigator']['deviceMemory']*1024
+            if ('deviceMemory' in preferences['gologin']):
+                profile['deviceMemory'] = preferences['gologin']['deviceMemory']
 
         proxy = self.profile.get('proxy')
         # print('proxy=', proxy)
