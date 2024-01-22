@@ -14,7 +14,7 @@ import socket
 import random
 import psutil
 
-from .extensionsManager import ExtensionsManager
+from extensionsManager import ExtensionsManager
 
 API_URL = 'https://api.gologin.com'
 PROFILES_URL = 'https://gprofiles-new.gologin.com/'
@@ -446,7 +446,12 @@ class GoLogin(object):
             preferences = json.load(pfile)
         profile = self.profile
         profile['profile_id'] = self.profile_id
-        profile['deviceMemory'] = preferences['gologin']['deviceMemory']
+
+        if ('deviceMemory' in preferences['gologin']['navigator']):
+            profile['deviceMemory'] = preferences['gologin']['navigator']['deviceMemory']*1024
+        if ('deviceMemory' in preferences['gologin']):
+            profile['deviceMemory'] = preferences['gologin']['deviceMemory']
+
         proxy = self.profile.get('proxy')
         # print('proxy=', proxy)
         if proxy and (proxy.get('mode') == 'gologin' or proxy.get('mode') == 'tor'):
