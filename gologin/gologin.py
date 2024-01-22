@@ -14,7 +14,7 @@ import socket
 import random
 import psutil
 
-from extensionsManager import ExtensionsManager
+from .extensionsManager import ExtensionsManager
 
 API_URL = 'https://api.gologin.com'
 PROFILES_URL = 'https://gprofiles-new.gologin.com/'
