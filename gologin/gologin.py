@@ -18,6 +18,7 @@ from .extensionsManager import ExtensionsManager
 
 API_URL = 'https://api.gologin.com'
 PROFILES_URL = 'https://gprofiles-new.gologin.com/'
+GET_TIMEZONE_URL = 'https://geo.myip.link'
 
 
 class GoLogin(object):
@@ -34,6 +35,7 @@ class GoLogin(object):
             'credentials_enable_service')
         self.cleaningLocalCookies = options.get('cleaningLocalCookies', False)
         self.executablePath = ''
+        self.is_cloud_headless = options.get('is_cloud_headless', True)
         self.is_new_cloud_browser = options.get('is_new_cloud_browser', True)
 
         home = str(pathlib.Path.home())
@@ -268,9 +270,9 @@ class GoLogin(object):
                 'http': self.formatProxyUrlPassword(proxy),
                 'https': self.formatProxyUrlPassword(proxy)
             }
-            data = requests.get('https://geo.myip.link', proxies=proxies)
+            data = requests.get(GET_TIMEZONE_URL, proxies=proxies)
         else:
-            data = requests.get('https://geo.myip.link')
+            data = requests.get(GET_TIMEZONE_URL)
         return json.loads(data.content.decode('utf-8'))
 
     def getProfile(self, profile_id=None):
@@ -444,6 +446,18 @@ class GoLogin(object):
             preferences = json.load(pfile)
         profile = self.profile
         profile['profile_id'] = self.profile_id
+
+        if ('navigator' in profile):
+            if ('deviceMemory' in profile['navigator']):
+                profile['deviceMemory'] = profile['navigator']['deviceMemory']*1024
+
+        if ('gologin' in preferences): 
+            if ('navigator' in preferences['gologin']):
+                if ('deviceMemory' in preferences['gologin']['navigator']):
+                    profile['deviceMemory'] = preferences['gologin']['navigator']['deviceMemory']*1024
+            if ('deviceMemory' in preferences['gologin']):
+                profile['deviceMemory'] = preferences['gologin']['deviceMemory']
+
         proxy = self.profile.get('proxy')
         # print('proxy=', proxy)
         if proxy and (proxy.get('mode') == 'gologin' or proxy.get('mode') == 'tor'):
@@ -620,7 +634,7 @@ class GoLogin(object):
         responseJson = requests.post(
             API_URL + '/browser/' + self.profile_id + '/web',
             headers=self.headers(),
-            json={'isNewCloudBrowser': self.is_new_cloud_browser}
+            json={'isNewCloudBrowser': self.is_new_cloud_browser, 'isHeadless': self.is_cloud_headless}
         ).content.decode('utf-8')
         response = json.loads(responseJson)
         print('profileResponse', response)
