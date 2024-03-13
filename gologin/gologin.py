@@ -19,7 +19,7 @@ from .extensionsManager import ExtensionsManager
 API_URL = 'https://api.gologin.com'
 PROFILES_URL = 'https://gprofiles-new.gologin.com/'
 GET_TIMEZONE_URL = 'https://geo.myip.link'
-
+FILES_GATEWAY = ' https://files-gateway.gologin.com'
 
 class GoLogin(object):
     def __init__(self, options):
@@ -202,6 +202,21 @@ class GoLogin(object):
 
         headers = {
             'Authorization': 'Bearer ' + self.access_token,
+            'User-Agent': 'Selenium-API',
+            'browserId': self.profile_id
+        }
+
+        requests.put(FILES_GATEWAY + '/upload', data=open(self.profile_zip_path_upload, 'rb'))
+
+
+    def commitProfileOld(self):
+        zipf = zipfile.ZipFile(
+            self.profile_zip_path_upload, 'w', zipfile.ZIP_DEFLATED)
+        self.zipdir(self.profile_path, zipf)
+        zipf.close()
+
+        headers = {
+            'Authorization': 'Bearer ' + self.access_token,
             'User-Agent': 'Selenium-API'
         }
         # print('profile size=', os.stat(self.profile_zip_path_upload).st_size)
@@ -288,6 +303,42 @@ class GoLogin(object):
         return data
 
     def downloadProfileZip(self):
+        print("downloadProfileZip")
+        s3path = self.profile.get('s3Path', '')
+        data = ''
+        headers = {
+            'Authorization': 'Bearer ' + self.access_token,
+            'User-Agent': 'Selenium-API',
+            'browserId': self.profile_id
+        }
+        data = requests.get(FILES_GATEWAY + '/download', headers=headers).content
+
+
+        if len(data) == 0:
+            print('data is 0 - creating fresh profile content')
+            self.createEmptyProfile()
+        else:
+            print(data)
+            with open(self.profile_zip_path, 'wb') as f:
+                f.write(data)
+
+        try:
+            print('extracting profile')
+            self.extractProfileZip()
+        except Exception as e:
+            print('exception', e)
+            self.uploadEmptyProfile()
+            self.createEmptyProfile()
+            self.extractProfileZip()
+
+        # if not os.path.exists(os.path.join(self.profile_path, 'Default', 'Preferences')):
+        #     print('preferences not found - creating fresh profile content')
+        #     self.uploadEmptyProfile()
+        #     self.createEmptyProfile()
+        #     self.extractProfileZip()
+
+    def downloadProfileZipOld(self):
+        print("downloadProfileZip")
         s3path = self.profile.get('s3Path', '')
         data = ''
         if s3path == '':
@@ -304,19 +355,24 @@ class GoLogin(object):
             data = requests.get(s3url).content
 
         if len(data) == 0:
+            print('data is 0 - creating fresh profile content')
             self.createEmptyProfile()
         else:
+            print('data is not 0')
             with open(self.profile_zip_path, 'wb') as f:
                 f.write(data)
 
         try:
+            print('extracting profile')
             self.extractProfileZip()
-        except:
+        except Exception as e:
+            print('exception', e)
             self.uploadEmptyProfile()
             self.createEmptyProfile()
             self.extractProfileZip()
 
         if not os.path.exists(os.path.join(self.profile_path, 'Default', 'Preferences')):
+            print('preferences not found - creating fresh profile content')
             self.uploadEmptyProfile()
             self.createEmptyProfile()
             self.extractProfileZip()
