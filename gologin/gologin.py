@@ -66,7 +66,7 @@ class GoLogin(object):
         self.start()
         return self
 
-    def __exit__(self, *args **kwargs):
+    def __exit__(self, *args, **kwargs):
         self.stop()
 
     def setProfileId(self, profile_id):
