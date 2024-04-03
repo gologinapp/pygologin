@@ -62,6 +62,13 @@ class GoLogin(object):
         self.preferences = {}
         self.pid = int()
 
+    def __enter__(self):
+        self.start()
+        return self
+
+    def __exit__(self, *args **kwargs):
+        self.stop()
+
     def setProfileId(self, profile_id):
         self.profile_id = profile_id
         if self.profile_id == None:
