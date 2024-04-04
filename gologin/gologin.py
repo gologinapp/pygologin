@@ -661,7 +661,6 @@ class GoLogin(object):
 
         response = json.loads(requests.post(
             API_URL + '/browser', headers=self.headers(), json=profile).content.decode('utf-8'))
-        status = 
         if not (response.get('statusCode') is None):
             raise ProtocolException(response)
         return response.get('id')
