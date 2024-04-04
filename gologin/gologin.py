@@ -21,6 +21,14 @@ PROFILES_URL = 'https://gprofiles-new.gologin.com/'
 GET_TIMEZONE_URL = 'https://geo.myip.link'
 FILES_GATEWAY = ' https://files-gateway.gologin.com'
 
+class ProtocolException(Exception):
+    def __init__(self, data:dict):
+        self._json =data
+        super().__init__(data.__repr__())
+    @property
+    def json(self) -> dict:
+        return self._json
+
 class GoLogin(object):
     def __init__(self, options):
         self.access_token = options.get('token')
@@ -653,6 +661,8 @@ class GoLogin(object):
 
         response = json.loads(requests.post(
             API_URL + '/browser', headers=self.headers(), json=profile).content.decode('utf-8'))
+        if response['statusCode'] != 200:
+            raise ProtocolException(response)
         return response.get('id')
 
     def delete(self, profile_id=None):
