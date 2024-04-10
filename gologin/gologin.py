@@ -84,7 +84,7 @@ class GoLogin(object):
         self.profile_path = os.path.join(
             self.tmpdir, 'gologin_' + self.profile_id)
         self.profile_zip_path = os.path.join(
-            self.tmpdir, 'gologin_' + self.profile_id+'.zip')
+            self.tmpdir, 'gologin_' + self.profile_id + '.zip')
         self.profile_zip_path_upload = os.path.join(
             self.tmpdir, 'gologin_' + self.profile_id+'_upload.zip')
 
@@ -321,6 +321,7 @@ class GoLogin(object):
     def downloadProfileZip(self):
         print("downloadProfileZip")
         s3path = self.profile.get('s3Path', '')
+        print('s3path', s3path)
         data = ''
         headers = {
             'Authorization': 'Bearer ' + self.access_token,
@@ -334,7 +335,6 @@ class GoLogin(object):
             print('data is 0 - creating fresh profile content')
             self.createEmptyProfile()
         else:
-            print(data)
             with open(self.profile_zip_path, 'wb') as f:
                 f.write(data)
 
@@ -408,6 +408,7 @@ class GoLogin(object):
         shutil.copy(empty_profile, self.profile_zip_path)
 
     def extractProfileZip(self):
+
         with zipfile.ZipFile(self.profile_zip_path, 'r') as zip_ref:
             zip_ref.extractall(self.profile_path)
         os.remove(self.profile_zip_path)
