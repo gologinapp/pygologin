@@ -208,8 +208,10 @@ class GoLogin(object):
             self.commitProfile()
             os.remove(self.profile_zip_path_upload)
             shutil.rmtree(self.profile_path)
+        print('profile stopped')
 
     def commitProfile(self):
+        print('commitProfile')
         zipf = zipfile.ZipFile(
             self.profile_zip_path_upload, 'w', zipfile.ZIP_DEFLATED)
         self.zipdir(self.profile_path, zipf)
@@ -223,6 +225,7 @@ class GoLogin(object):
         }
 
         requests.put(FILES_GATEWAY + '/upload', data=open(self.profile_zip_path_upload, 'rb'))
+        print('commitProfile completed')
 
 
     def commitProfileOld(self):
@@ -342,7 +345,7 @@ class GoLogin(object):
             print('extracting profile')
             self.extractProfileZip()
         except Exception as e:
-            print('exception', e)
+            print('ERROR!', e)
             self.uploadEmptyProfile()
             self.createEmptyProfile()
             self.extractProfileZip()
