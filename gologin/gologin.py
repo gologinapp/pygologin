@@ -19,7 +19,7 @@ from .extensionsManager import ExtensionsManager
 API_URL = 'https://api.gologin.com'
 PROFILES_URL = 'https://gprofiles-new.gologin.com/'
 GET_TIMEZONE_URL = 'https://geo.myip.link'
-FILES_GATEWAY = ' https://files-gateway.gologin.com'
+FILES_GATEWAY = 'https://files-gateway.gologin.com'
 
 class ProtocolException(Exception):
     def __init__(self, data:dict):
@@ -224,8 +224,8 @@ class GoLogin(object):
             'browserId': self.profile_id
         }
 
-        requests.put(FILES_GATEWAY + '/upload', data=open(self.profile_zip_path_upload, 'rb'))
-        print('commitProfile completed')
+        data = requests.put(FILES_GATEWAY + '/upload', data=open(self.profile_zip_path_upload, 'rb'))
+        print('commitProfile completed', data)
 
 
     def commitProfileOld(self):
@@ -331,8 +331,8 @@ class GoLogin(object):
             'User-Agent': 'Selenium-API',
             'browserId': self.profile_id
         }
-        data = requests.get(FILES_GATEWAY + '/download', headers=headers).content
 
+        data = requests.get(FILES_GATEWAY + '/download', headers=headers).content
 
         if len(data) == 0:
             print('data is 0 - creating fresh profile content')
