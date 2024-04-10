@@ -224,7 +224,7 @@ class GoLogin(object):
             'browserId': self.profile_id
         }
 
-        data = requests.put(FILES_GATEWAY + '/upload', data=open(self.profile_zip_path_upload, 'rb'))
+        data = requests.put(FILES_GATEWAY + '/upload', data=open(self.profile_zip_path_upload, 'rb'), headers=headers)
         print('commitProfile completed', data)
 
 
