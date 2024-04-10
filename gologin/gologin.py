@@ -406,9 +406,19 @@ class GoLogin(object):
     def createEmptyProfile(self):
         print('createEmptyProfile')
         empty_profile = '../gologin_zeroprofile.zip'
+
         if not os.path.exists(empty_profile):
             empty_profile = 'gologin_zeroprofile.zip'
-        shutil.copy(empty_profile, self.profile_zip_path)
+
+        if os.path.exists(empty_profile):
+            shutil.copy(empty_profile, self.profile_zip_path)
+
+        if not os.path.exists(empty_profile):
+            print('downloading zero profile')
+            source = requests.get(PROFILES_URL + 'zero_profile.zip')
+            with open(self.profile_zip_path, 'wb') as profile_zip:
+                profile_zip.write(source.content)
+
 
     def extractProfileZip(self):
 
