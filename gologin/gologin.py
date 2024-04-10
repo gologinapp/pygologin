@@ -218,6 +218,7 @@ class GoLogin(object):
         headers = {
             'Authorization': 'Bearer ' + self.access_token,
             'User-Agent': 'Selenium-API',
+            'Content-Type': 'application/zip',
             'browserId': self.profile_id
         }
 
