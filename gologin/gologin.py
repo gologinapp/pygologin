@@ -15,6 +15,7 @@ import random
 import psutil
 
 from .extensionsManager import ExtensionsManager
+from .cookiesManager import CookiesManager
 
 API_URL = 'https://api.gologin.com'
 PROFILES_URL = 'https://gprofiles-new.gologin.com/'
@@ -42,6 +43,8 @@ class GoLogin(object):
         self.credentials_enable_service = options.get(
             'credentials_enable_service')
         self.cleaningLocalCookies = options.get('cleaningLocalCookies', False)
+        self.uploadCookiesToServer = options.get('uploadCookiesToServer', False)
+        self.writeCookiesFromServer = options.get('writeCookiesFromServer', False)
         self.executablePath = ''
         self.is_cloud_headless = options.get('is_cloud_headless', True)
         self.is_new_cloud_browser = options.get('is_new_cloud_browser', True)
@@ -168,6 +171,7 @@ class GoLogin(object):
         return url
 
     def start(self):
+        print('start')
         profile_path = self.createStartup()
         if self.spawn_browser == True:
             return self.spawnBrowser()
@@ -335,7 +339,7 @@ class GoLogin(object):
         data = requests.get(FILES_GATEWAY + '/download', headers=headers).content
 
         if len(data) == 0:
-            print('data is 0 - creating fresh profile content')
+            print('data is 0 - creating empty profile')
             self.createEmptyProfile()
         else:
             with open(self.profile_zip_path, 'wb') as f:
@@ -424,6 +428,7 @@ class GoLogin(object):
 
         with zipfile.ZipFile(self.profile_zip_path, 'r') as zip_ref:
             zip_ref.extractall(self.profile_path)
+        print('profile extracted', self.profile_path)
         os.remove(self.profile_zip_path)
 
     def getGeolocationParams(self, profileGeolocationParams, tzGeolocationParams):
@@ -589,6 +594,7 @@ class GoLogin(object):
         json.dump(preferences, pfile)
 
     def createStartup(self):
+        print('createStartup', self.profile_path)
         if self.local == False and os.path.exists(self.profile_path):
             try:
                 shutil.rmtree(self.profile_path)
@@ -599,7 +605,49 @@ class GoLogin(object):
             self.downloadProfileZip()
         self.updatePreferences()
 
+        print('writeCookiesFromServer', self.writeCookiesFromServer)
+        if self.writeCookiesFromServer:
+            self.downloadCookies()
+            print('cookies downloaded')
         return self.profile_path
+
+
+    def downloadCookies(self):
+        api_base_url = API_URL
+        access_token = self.access_token
+
+        cookiesManagerInst = CookiesManager(
+            profile_id = self.profile_id,
+            tmpdir = self.tmpdir
+        );
+
+        try:
+            response = requests.get(f"{api_base_url}/browser/{self.profile_id}/cookies", headers={
+                'Authorization': f'Bearer {self.access_token}',
+                'user-agent': 'Selenium-API'
+            })
+
+            cookies = response.json()
+            print('COOKIES LENGTH', len(cookies))
+            cookiesManagerInst.write_cookies_to_file(cookies)
+        except Exception as e:
+            print('downloadCookies exc', e, e.__traceback__.tb_lineno)
+            raise e
+
+
+    def uploadCookies(self, cookies):
+        api_base_url = API_URL
+        access_token = self.access_token
+
+        try:
+            response = requests.post(f"{api_base_url}/browser/{self.profile_id}/cookies/?encrypted=true", headers={
+                'Authorization': f'Bearer {self.access_token}',
+                'User-Agent': 'Selenium-API'
+            }, json=cookies)
+            return response
+        except Exception as e:
+            print('uploadCookies', e)
+            return e
 
     def headers(self):
         return {
