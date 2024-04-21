@@ -20,7 +20,15 @@ from .cookiesManager import CookiesManager
 API_URL = 'https://api.gologin.com'
 PROFILES_URL = 'https://gprofiles-new.gologin.com/'
 GET_TIMEZONE_URL = 'https://geo.myip.link'
-FILES_GATEWAY = ' https://files-gateway.gologin.com'
+FILES_GATEWAY = 'https://files-gateway.gologin.com'
+
+class ProtocolException(Exception):
+    def __init__(self, data:dict):
+        self._json =data
+        super().__init__(data.__repr__())
+    @property
+    def json(self) -> dict:
+        return self._json
 
 class GoLogin(object):
     def __init__(self, options):
@@ -65,6 +73,13 @@ class GoLogin(object):
         self.preferences = {}
         self.pid = int()
 
+    def __enter__(self):
+        self.start()
+        return self
+
+    def __exit__(self, *args, **kwargs):
+        self.stop()
+
     def setProfileId(self, profile_id):
         self.profile_id = profile_id
         if self.profile_id == None:
@@ -72,7 +87,7 @@ class GoLogin(object):
         self.profile_path = os.path.join(
             self.tmpdir, 'gologin_' + self.profile_id)
         self.profile_zip_path = os.path.join(
-            self.tmpdir, 'gologin_' + self.profile_id+'.zip')
+            self.tmpdir, 'gologin_' + self.profile_id + '.zip')
         self.profile_zip_path_upload = os.path.join(
             self.tmpdir, 'gologin_' + self.profile_id+'_upload.zip')
 
@@ -197,8 +212,10 @@ class GoLogin(object):
             self.commitProfile()
             os.remove(self.profile_zip_path_upload)
             shutil.rmtree(self.profile_path)
+        print('profile stopped')
 
     def commitProfile(self):
+        print('commitProfile')
         zipf = zipfile.ZipFile(
             self.profile_zip_path_upload, 'w', zipfile.ZIP_DEFLATED)
         self.zipdir(self.profile_path, zipf)
@@ -207,10 +224,12 @@ class GoLogin(object):
         headers = {
             'Authorization': 'Bearer ' + self.access_token,
             'User-Agent': 'Selenium-API',
+            'Content-Type': 'application/zip',
             'browserId': self.profile_id
         }
 
-        requests.put(FILES_GATEWAY + '/upload', data=open(self.profile_zip_path_upload, 'rb'))
+        data = requests.put(FILES_GATEWAY + '/upload', data=open(self.profile_zip_path_upload, 'rb'), headers=headers)
+        print('commitProfile completed', data)
 
 
     def commitProfileOld(self):
@@ -309,14 +328,15 @@ class GoLogin(object):
     def downloadProfileZip(self):
         print("downloadProfileZip")
         s3path = self.profile.get('s3Path', '')
+        print('s3path', s3path)
         data = ''
         headers = {
             'Authorization': 'Bearer ' + self.access_token,
             'User-Agent': 'Selenium-API',
             'browserId': self.profile_id
         }
-        data = requests.get(FILES_GATEWAY + '/download', headers=headers).content
 
+        data = requests.get(FILES_GATEWAY + '/download', headers=headers).content
 
         if len(data) == 0:
             print('data is 0 - creating empty profile')
@@ -329,7 +349,7 @@ class GoLogin(object):
             print('extracting profile')
             self.extractProfileZip()
         except Exception as e:
-            print('exception', e)
+            print('ERROR!', e)
             self.uploadEmptyProfile()
             self.createEmptyProfile()
             self.extractProfileZip()
@@ -390,11 +410,22 @@ class GoLogin(object):
     def createEmptyProfile(self):
         print('createEmptyProfile')
         empty_profile = '../gologin_zeroprofile.zip'
+
         if not os.path.exists(empty_profile):
             empty_profile = 'gologin_zeroprofile.zip'
-        shutil.copy(empty_profile, self.profile_zip_path)
+
+        if os.path.exists(empty_profile):
+            shutil.copy(empty_profile, self.profile_zip_path)
+
+        if not os.path.exists(empty_profile):
+            print('downloading zero profile')
+            source = requests.get(PROFILES_URL + 'zero_profile.zip')
+            with open(self.profile_zip_path, 'wb') as profile_zip:
+                profile_zip.write(source.content)
+
 
     def extractProfileZip(self):
+
         with zipfile.ZipFile(self.profile_zip_path, 'r') as zip_ref:
             zip_ref.extractall(self.profile_path)
         print('profile extracted', self.profile_path)
@@ -693,6 +724,8 @@ class GoLogin(object):
 
         response = json.loads(requests.post(
             API_URL + '/browser', headers=self.headers(), json=profile).content.decode('utf-8'))
+        if not (response.get('statusCode') is None):
+            raise ProtocolException(response)
         return response.get('id')
 
     def delete(self, profile_id=None):
