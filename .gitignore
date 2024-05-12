@@ -6,7 +6,8 @@ __pycache__/
 # C extensions
 *.so
 
-*_.py
+#disable __init__.py ignoring
+# *_.py
 
 # Distribution / packaging
 .Python
