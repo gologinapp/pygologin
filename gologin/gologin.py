@@ -299,7 +299,7 @@ class GoLogin(object):
         if proxy.get('username', '') == '':
             return mode+'://'+proxy.get('host', '')+':'+str(proxy.get('port', 80))
         else:
-            return proxy.get('mode', 'http')+'://'+proxy.get('username', '')+':'+proxy.get('password')+'@'+proxy.get('host', '')+':'+str(proxy.get('port', 80))
+            return mode+'://'+proxy.get('username', '')+':'+proxy.get('password')+'@'+proxy.get('host', '')+':'+str(proxy.get('port', 80))
 
     def getTimeZone(self):
         proxy = self.proxy
