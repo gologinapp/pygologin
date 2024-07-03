@@ -455,7 +455,7 @@ class GoLogin(object):
         }
 
     def convertPreferences(self, preferences):
-        resolution = preferences.get('resolution', '1920x1080')
+        resolution = preferences.get('navigator', {}).get('resolution', '1920x1080')
         preferences['screenWidth'] = int(resolution.split('x')[0])
         preferences['screenHeight'] = int(resolution.split('x')[1])
         self.preferences = preferences
