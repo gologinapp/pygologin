@@ -98,11 +98,14 @@ class GoLogin(object):
         pathToExt = ''
         profileExtensionsCheck = []
         for ext in chromeExtensions:
-            ver = extensionsManagerInst.downloadExt(ext)
-            pathToExt += os.path.join(pathlib.Path.home(), '.gologin',
+            try:
+                ver = extensionsManagerInst.downloadExt(ext)
+                pathToExt += os.path.join(pathlib.Path.home(), '.gologin',
                                       'extensions', 'chrome-extensions', ext + '@' + ver + ',')
-            profileExtensionsCheck.append(os.path.join(pathlib.Path.home(
-            ), '.gologin', 'extensions', 'chrome-extensions', ext + '@' + ver))
+                profileExtensionsCheck.append(os.path.join(pathlib.Path.home(
+                ), '.gologin', 'extensions', 'chrome-extensions', ext + '@' + ver))
+            except Exception as e:
+                continue
 
         pref_file = os.path.join(self.profile_path, 'Default', 'Preferences')
         with open(pref_file, 'r', encoding="utf-8") as pfile:
