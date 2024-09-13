@@ -45,6 +45,7 @@ class GoLogin(object):
         self.cleaningLocalCookies = options.get('cleaningLocalCookies', False)
         self.uploadCookiesToServer = options.get('uploadCookiesToServer', False)
         self.writeCookiesFromServer = options.get('writeCookiesFromServer', False)
+        self.restore_last_session = options.get('restore_last_session', False)
         self.executablePath = ''
         self.is_cloud_headless = options.get('is_cloud_headless', True)
         self.is_new_cloud_browser = options.get('is_new_cloud_browser', True)
@@ -151,6 +152,9 @@ class GoLogin(object):
             hr_rules = '"MAP * 0.0.0.0 , EXCLUDE %s"' % (proxy_host)
             params.append('--proxy-server='+proxy)
             params.append('--host-resolver-rules='+hr_rules)
+
+        if self.restore_last_session:
+            params.append('--restore-last-session')
 
         for param in self.extra_params:
             params.append(param)
@@ -622,7 +626,7 @@ class GoLogin(object):
         cookiesManagerInst = CookiesManager(
             profile_id = self.profile_id,
             tmpdir = self.tmpdir
-        );
+        )
 
         try:
             response = requests.get(f"{api_base_url}/browser/{self.profile_id}/cookies", headers={

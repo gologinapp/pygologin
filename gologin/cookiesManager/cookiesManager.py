@@ -14,6 +14,27 @@ SAME_SITE = {
     2: 'strict',
 }
 
+COOKIE_ROW_COLUMN_NAMES = [
+    'creation_utc',
+    'host_key',
+    'top_frame_site_key',
+    'name',
+    'value',
+    'encrypted_value',
+    'path',
+    'expires_utc',
+    'is_secure',
+    'is_httponly',
+    'last_access_utc',
+    'has_expires',
+    'is_persistent',
+    'priority',
+    'samesite',
+    'source_scheme',
+    'source_port',
+    'last_update_utc',
+]
+
 class CookiesManager():
     def __init__(self, *args, **kwargs):
         self.profile_id = kwargs.get('profile_id')
@@ -86,20 +107,20 @@ class CookiesManager():
             cookies_rows = db.execute('select * from cookies')
             cookies_rows = cookies_rows.fetchall()
             for row in cookies_rows:
-                creation_utc, host_key, top_frame_site_key, name, value, encrypted_value, path, expires_utc, is_secure, is_httponly, last_access_utc, has_expires, is_persistent, priority, samesite, source_scheme, source_port, last_update_utc = row
+                row_data = dict(zip(COOKIE_ROW_COLUMN_NAMES, row))
                 cookies.append({
-                    'url': self.build_cookie_url(host_key, is_secure, path),
-                    'domain': host_key,
-                    'name': name,
-                    'value': encrypted_value,
-                    'path': path,
-                    'sameSite': SAME_SITE[samesite],
-                    'secure': bool(is_secure),
-                    'httpOnly': bool(is_httponly),
-                    'hostOnly': not host_key.startswith('.'),
-                    'session': not is_persistent,
-                    'expirationDate': self.ldap_to_unix(expires_utc),
-                    'creationDate': self.ldap_to_unix(creation_utc),
+                    'url': self.build_cookie_url(row_data['host_key'], row_data['is_secure'], row_data['path']),
+                    'domain': row_data['host_key'],
+                    'name': row_data['name'],
+                    'value': row_data['encrypted_value'],
+                    'path': row_data['path'],
+                    'sameSite': SAME_SITE[row_data['samesite']],
+                    'secure': bool(row_data['is_secure']),
+                    'httpOnly': bool(row_data['is_httponly']),
+                    'hostOnly': not row_data['host_key'].startswith('.'),
+                    'session': not row_data['is_persistent'],
+                    'expirationDate': self.ldap_to_unix(row_data['expires_utc']),
+                    'creationDate': self.ldap_to_unix(row_data['creation_utc']),
                 })
         except Exception as error:
             print('load_cookies_from_file', error)
@@ -179,23 +200,16 @@ class CookiesManager():
 
         try:
             if result_cookies:
-                query = 'delete from cookies'
-                cursor.execute(query)
-                db.commit()
-
                 chunk_insert_values = self.get_chunked_insert_values(result_cookies)
-                # print('chunk_insert_values', chunk_insert_values)
-
                 for query, query_params in chunk_insert_values:
                     for params in query_params:
                         res = cursor.execute(query, params)
-                        # print('params', params)
-                        # print('res', res.rowcount, res.lastrowid, res.fetchall())
-                db.commit()
+
             else:
                 query = 'delete from cookies'
                 cursor.execute(query)
-                db.commit()
+
+            db.commit()
             db.close()
             self.load_cookies_from_file()
             db.close()
