@@ -87,6 +87,8 @@ class GoLogin(object):
             return
         self.profile_path = os.path.join(
             self.tmpdir, 'gologin_' + self.profile_id)
+        self.profile_default_folder_path = os.path.join(
+            self.profile_path, 'Default')
         self.profile_zip_path = os.path.join(
             self.tmpdir, 'gologin_' + self.profile_id + '.zip')
         self.profile_zip_path_upload = os.path.join(
@@ -192,10 +194,7 @@ class GoLogin(object):
                     continue
                 if stat.S_ISSOCK(os.stat(path).st_mode):
                     continue
-                try:
-                    ziph.write(path, path.replace(self.profile_path, ''))
-                except:
-                    continue
+                ziph.write(path, path.replace(self.profile_path, ''))
 
     def waitUntilProfileUsing(self, try_count=0):
         if try_count > 10:
@@ -225,7 +224,8 @@ class GoLogin(object):
         print('commitProfile')
         zipf = zipfile.ZipFile(
             self.profile_zip_path_upload, 'w', zipfile.ZIP_DEFLATED)
-        self.zipdir(self.profile_path, zipf)
+        self.zipdir(self.profile_default_folder_path, zipf)
+        zipf.writestr('First Run', '')
         zipf.close()
 
         headers = {
