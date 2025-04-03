@@ -454,87 +454,106 @@ class GoLogin(object):
             'accuracy': profileGeolocationParams['accuracy'],
         }
 
-    def convertPreferences(self, preferences):
-        resolution = preferences.get('resolution', '1920x1080')
-        preferences['screenWidth'] = int(resolution.split('x')[0])
-        preferences['screenHeight'] = int(resolution.split('x')[1])
-        self.preferences = preferences
+    def getGologinPreferences(self, profileData):
+        os = profileData.get('os', '')
+        osSpec = profileData.get('osSpec', '')
+        isM1 = profileData.get('isM1', False)
+        isArm = (os == 'mac' and osSpec and 'M' in osSpec) or isM1
+        resolution = profileData.get('navigator', {}).get('resolution', '1920x1080')
+        screenWidth = int(resolution.split('x')[0])
+        screenHeight = int(resolution.split('x')[1])
+        langHeader = profileData.get('navigator', {}).get('language', '')
+        print('langHeader', langHeader)
+        splittedLangs = langHeader.split(',')[0] if langHeader else 'en-US'
+
+        startupUrl = profileData.get('startUrl', '').strip().split(',')[0]
+        startupUrls = [url.strip() for url in profileData.get('startUrl', '').split(',') if url.strip()]
         self.tz = self.getTimeZone()
-        # print('tz=', self.tz)
-        tzGeoLocation = {
-            'latitude': self.tz.get('ll', [0, 0])[0],
-            'longitude': self.tz.get('ll', [0, 0])[1],
-            'accuracy': self.tz.get('accuracy', 0),
-        }
 
-        preferences['geoLocation'] = self.getGeolocationParams(
-            preferences['geolocation'], tzGeoLocation)
-
-        preferences['webRtc'] = {
-            'mode': 'public' if preferences.get('webRTC', {}).get('mode') == 'alerted' else preferences.get('webRTC', {}).get('mode'),
-            'publicIP': self.tz['ip'] if preferences.get('webRTC', {}).get('fillBasedOnIp') else preferences.get('webRTC', {}).get('publicIp'),
-            'localIps': preferences.get('webRTC', {}).get('localIps', [])
-        }
-
-        preferences['timezone'] = {
-            'id': self.tz.get('timezone')
-        }
-
-        preferences['webgl_noise_value'] = preferences.get(
-            'webGL', {}).get('noise')
-        preferences['get_client_rects_noise'] = preferences.get(
-            'webGL', {}).get('getClientRectsNoise')
-        preferences['canvasMode'] = preferences.get('canvas', {}).get('mode')
-        preferences['canvasNoise'] = preferences.get('canvas', {}).get('noise')
-        if preferences.get('clientRects', {}).get('mode') == 'noise':
-            preferences['client_rects_noise_enable'] = True
-        preferences['audioContextMode'] = preferences.get(
-            'audioContext', {}).get('mode')
-        preferences['audioContext'] = {
-            'enable': preferences.get('audioContextMode') != 'off',
-            'noiseValue': preferences.get('audioContext').get('noise'),
-        }
-
-        preferences['webgl'] = {
-            'metadata': {
-                'vendor': preferences.get('webGLMetadata', {}).get('vendor'),
-                'renderer': preferences.get('webGLMetadata', {}).get('renderer'),
-                'mode': preferences.get('webGLMetadata', {}).get('mode') == 'mask',
+        preferences = {
+            'profile_id': profileData.get('id'),
+            'name': profileData.get('name'),
+            'is_m1': isArm,
+            'geolocation': profileData.get('geolocation', {}),
+            'navigator': {
+                'platform': profileData.get('navigator', {}).get('platform', ''),
+                'max_touch_points': profileData.get('navigator', {}).get('maxTouchPoints', 0),
+            },
+            'dns': profileData.get('dns', {}),
+            'proxy': {
+                'username': profileData.get('proxy', {}).get('username', ''),
+                'password': profileData.get('proxy', {}).get('password', ''),
+            },
+            'webRTC': profileData.get('webRTC', {}),
+            'screenHeight': screenHeight,
+            'screenWidth': screenWidth,
+            'userAgent': profileData.get('navigator', {}).get('userAgent', ''),
+            'webGl': {
+                'vendor': profileData.get('webGLMetadata', {}).get('vendor', ''),
+                'renderer': profileData.get('webGLMetadata', {}).get('renderer', ''),
+                'mode': profileData.get('webGLMetadata', {}).get('mode', '') == 'mask',
+            },
+            'webRTC': profileData.get('webRTC', {}),
+            'webgl': {
+                'metadata': {
+                    'vendor': profileData.get('webGLMetadata', {}).get('vendor', ''),
+                    'renderer': profileData.get('webGLMetadata', {}).get('renderer', ''),
+                    'mode': profileData.get('webGLMetadata', {}).get('mode', '') == 'mask',
+                },
+            },
+            'mobile': {
+                'enable': profileData.get('os', False) == 'android',
+                'width': profileData.get('screenWidth', 1920),
+                'height': profileData.get('screenHeight', 1080),
+                'device_scale_factor': profileData.get('devicePixelRatio', 1),
+            },
+            'webglParams': profileData.get('webglParams', {}),
+            'webGpu': profileData.get('webGpu', {}),
+            'webgl_noice_enable': profileData.get('webGL', {}).get('mode') == 'noise',
+            'webglNoiceEnable': profileData.get('webGL', {}).get('mode') == 'noise',
+            'webgl_noise_enable': profileData.get('webGL', {}).get('mode') == 'noise',
+            'webgl_noise_value': profileData.get('webGL', {}).get('noise'),
+            'webglNoiseValue': profileData.get('webGL', {}).get('noise'),
+            'getClientRectsNoice': profileData.get('clientRects', {}).get('noise') or profileData.get('webGL', {}).get('getClientRectsNoise'),
+            'client_rects_noise_enable': profileData.get('clientRects', {}).get('mode') == 'noise',
+            'media_devices': {
+                'enable': profileData.get('mediaDevices', {}).get('enableMasking', True),
+                'uid': profileData.get('mediaDevices', {}).get('uid', ''),
+                'audioInputs': profileData.get('mediaDevices', {}).get('audioInputs', 1),
+                'audioOutputs': profileData.get('mediaDevices', {}).get('audioOutputs', 1),
+                'videoInputs': profileData.get('mediaDevices', {}).get('videoInputs', 1),
+            },
+            'doNotTrack': profileData.get('navigator', {}).get('doNotTrack', False),
+            'plugins': {
+                'all_enable': profileData.get('plugins', {}).get('enableVulnerable', True),
+                'flash_enable': profileData.get('plugins', {}).get('enableFlash', True),
+            },
+            'storage': {
+                'enable': profileData.get('storage', {}).get('local', True),
+            },
+            'audioContext': {
+                'enable': profileData.get('audioContext', {}).get('mode', 'off') != 'off',
+                'noiseValue': profileData.get('audioContext', {}).get('noise', ''),
+            },
+            'canvas': {
+                'mode': profileData.get('canvas', {}).get('mode', ''),
+            },
+            'languages': splittedLangs,
+            'langHeader': langHeader,
+            'canvasMode': profileData.get('canvas', {}).get('mode', ''),
+            'canvasNoise': profileData.get('canvas', {}).get('noise', ''),
+            'deviceMemory': profileData.get('navigator', {}).get('deviceMemory', 0),
+            'hardwareConcurrency': profileData.get('navigator', {}).get('hardwareConcurrency', 2),
+            'deviceMemory': profileData.get('navigator', {}).get('deviceMemory', 2) * 1024,
+            'startupUrl': startupUrl,
+            'startup_urls': startupUrls,
+            'geolocation': {
+                'latitude': self.tz.get('ll', [0, 0])[0],
+                'longitude': self.tz.get('ll', [0, 0])[1],
+                'accuracy': self.tz.get('accuracy', 0),
             }
         }
-
-        if preferences.get('navigator', {}).get('userAgent'):
-            preferences['userAgent'] = preferences.get(
-                'navigator', {}).get('userAgent')
-
-        if preferences.get('navigator', {}).get('doNotTrack'):
-            preferences['doNotTrack'] = preferences.get(
-                'navigator', {}).get('doNotTrack')
-
-        if preferences.get('navigator', {}).get('hardwareConcurrency'):
-            preferences['hardwareConcurrency'] = preferences.get(
-                'navigator', {}).get('hardwareConcurrency')
-
-        if preferences.get('navigator', {}).get('language'):
-            preferences['languages'] = preferences.get(
-                'navigator', {}).get('language')
-
-        if preferences.get('isM1', False):
-            preferences["is_m1"] = preferences.get('isM1', False)
-
-        if preferences.get('os') == "android":
-            devicePixelRatio = preferences.get("devicePixelRatio")
-            deviceScaleFactorCeil = math.ceil(devicePixelRatio or 3.5)
-            deviceScaleFactor = devicePixelRatio
-            if deviceScaleFactorCeil == devicePixelRatio:
-                deviceScaleFactor += 0.00000001
-
-            preferences["mobile"] = {
-                "enable": True,
-                "width": preferences['screenWidth'],
-                "height": preferences['screenHeight'],
-                "device_scale_factor": deviceScaleFactor,
-            }
+        self.preferences = preferences
 
         return preferences
 
@@ -544,17 +563,6 @@ class GoLogin(object):
             preferences = json.load(pfile)
         profile = self.profile
         profile['profile_id'] = self.profile_id
-
-        if ('navigator' in profile):
-            if ('deviceMemory' in profile['navigator']):
-                profile['deviceMemory'] = profile['navigator']['deviceMemory']*1024
-
-        if ('gologin' in preferences): 
-            if ('navigator' in preferences['gologin']):
-                if ('deviceMemory' in preferences['gologin']['navigator']):
-                    profile['deviceMemory'] = preferences['gologin']['navigator']['deviceMemory']*1024
-            if ('deviceMemory' in preferences['gologin']):
-                profile['deviceMemory'] = preferences['gologin']['deviceMemory']
 
         proxy = self.profile.get('proxy')
         # print('proxy=', proxy)
@@ -593,7 +601,7 @@ class GoLogin(object):
             print('profile=', profile)
             exit()
 
-        gologin = self.convertPreferences(profile)
+        gologin = self.getGologinPreferences(profile)
         if self.credentials_enable_service != None:
             preferences['credentials_enable_service'] = self.credentials_enable_service
         preferences['gologin'] = gologin
@@ -668,6 +676,11 @@ class GoLogin(object):
 
     def profiles(self):
         return json.loads(requests.get(API_URL + '/browser/v2', headers=self.headers()).content.decode('utf-8'))
+    
+    def createProfileRandomFingerprint(self, options={}):
+        response = json.loads(requests.post(
+            API_URL + '/browser/quick', headers=self.headers(), json=options).content.decode('utf-8'))
+        return response
 
     def create(self, options={}):
         profile_options = self.getRandomFingerprint(options)
