@@ -138,9 +138,10 @@ class GoLogin(object):
             '--remote-debugging-port='+str(self.port),
             '--user-data-dir='+self.profile_path,
             '--password-store=basic',
-            '--tz='+tz,
             '--gologin-profile='+self.profile_name,
             '--lang=en-US',
+            '--webrtc-ip-handling-policy=default_public_interface_only',
+            '--disable-features=PrintCompositorLPAC'
         ]
 
         chromeExtensions = self.profile.get('chromeExtensions')
@@ -151,7 +152,7 @@ class GoLogin(object):
                 params.append(extToParams)
 
         if proxy:
-            hr_rules = '"MAP * 0.0.0.0 , EXCLUDE %s"' % (proxy_host)
+            hr_rules = 'MAP * 0.0.0.0 , EXCLUDE %s' % (proxy_host)
             params.append('--proxy-server='+proxy)
             params.append('--host-resolver-rules='+hr_rules)
 
@@ -548,10 +549,14 @@ class GoLogin(object):
             'startupUrl': startupUrl,
             'startup_urls': startupUrls,
             'geolocation': {
-                'latitude': self.tz.get('ll', [0, 0])[0],
-                'longitude': self.tz.get('ll', [0, 0])[1],
-                'accuracy': self.tz.get('accuracy', 0),
-            }
+                'mode': profileData.get('geolocation', {}).get('mode', 'prompt'),
+                'latitude': float(self.tz.get('ll', [0, 0])[0]),
+                'longitude': float(self.tz.get('ll', [0, 0])[1]),
+                'accuracy': float(self.tz.get('accuracy', 0)),
+            },
+            'timezone': {
+                'id': self.tz.get('timezone', ''),
+            },
         }
         self.preferences = preferences
 
