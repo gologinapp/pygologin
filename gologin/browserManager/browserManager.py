@@ -5,7 +5,7 @@ import sys
 import zipfile
 import platform
 import subprocess
-
+import shutil
 class BrowserManager:
     def __init__(self):
         self.home = str(pathlib.Path.home())
@@ -59,6 +59,28 @@ class BrowserManager:
         extracted_dir = os.path.join(self.browser_dir, f"orbita-browser-{major_version}")
         os.makedirs(extracted_dir, exist_ok=True)
         if file_extension == 'zip':
+            # Extract the zip file to a temporary directory first
+            temp_extract_dir = os.path.join(self.browser_dir, f"temp-extract-{major_version}")
+            os.makedirs(temp_extract_dir, exist_ok=True)
+            
+            with zipfile.ZipFile(temp_file, 'r') as zip_ref:
+                zip_ref.extractall(temp_extract_dir)
+            
+            # Find the subfolder (usually there's only one)
+            subfolders = [f for f in os.listdir(temp_extract_dir) if os.path.isdir(os.path.join(temp_extract_dir, f))]
+            
+            if subfolders:
+                # Move contents from subfolder to the target directory
+                subfolder_path = os.path.join(temp_extract_dir, subfolders[0])
+                for item in os.listdir(subfolder_path):
+                    shutil.move(
+                        os.path.join(subfolder_path, item),
+                        os.path.join(extracted_dir, item)
+                    )
+            
+            # Clean up the temporary directory
+            shutil.rmtree(temp_extract_dir)
+            extracted_dir = os.path.join(self.browser_dir, f"orbita-browser-{major_version}")
             with zipfile.ZipFile(temp_file, 'r') as zip_ref:
                 zip_ref.extractall(extracted_dir)
         else:
