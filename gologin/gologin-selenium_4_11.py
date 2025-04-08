@@ -6,8 +6,8 @@ from gologin import getRandomPort
 from selenium.webdriver.chrome.service import Service
 
 gl = GoLogin({
-	"token": "yU0token",
-	"profile_id": "yU0Pr0f1leiD"
+	"token": "Your token",
+	"profile_id": "Your profile id"
 	})
 
 if platform == "linux" or platform == "linux2":

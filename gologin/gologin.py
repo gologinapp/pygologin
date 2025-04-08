@@ -9,13 +9,13 @@ import zipfile
 import subprocess
 import pathlib
 import tempfile
-import math
 import socket
 import random
 import psutil
 
 from .extensionsManager import ExtensionsManager
 from .cookiesManager import CookiesManager
+from .browserManager import BrowserManager
 
 API_URL = 'https://api.gologin.com'
 PROFILES_URL = 'https://gprofiles-new.gologin.com/'
@@ -49,24 +49,6 @@ class GoLogin(object):
         self.executablePath = ''
         self.is_cloud_headless = options.get('is_cloud_headless', True)
         self.is_new_cloud_browser = options.get('is_new_cloud_browser', True)
-
-        home = str(pathlib.Path.home())
-        browser_gologin = os.path.join(home, '.gologin', 'browser')
-        try:
-            for orbita_browser in os.listdir(browser_gologin):
-                if not orbita_browser.endswith('.zip') and not orbita_browser.endswith('.tar.gz') and orbita_browser.startswith('orbita-browser'):
-                    self.executablePath = options.get('executablePath', os.path.join(
-                        browser_gologin, orbita_browser, 'chrome'))
-                    if not os.path.exists(self.executablePath) and not orbita_browser.endswith('.tar.gz') and sys.platform == "darwin":
-                        self.executablePath = os.path.join(
-                            home, browser_gologin, orbita_browser, 'Orbita-Browser.app/Contents/MacOS/Orbita')
-
-        except Exception as e:
-            self.executablePath = ''
-
-        if not self.executablePath:
-            raise Exception(
-                f"Orbita executable file not found in HOME ({browser_gologin}). Is gologin installed on your system?")
 
         if self.extra_params:
             print('extra_params', self.extra_params)
@@ -621,6 +603,17 @@ class GoLogin(object):
             except:
                 print("error removing profile", self.profile_path)
         self.profile = self.getProfile()
+
+        if (self.executablePath == ''):
+
+            uaVersion = self.profile.get('navigator', {}).get('userAgent', '')
+
+            browserMajorVersion = uaVersion.split('Chrome/')[1].split('.')[0]
+
+            browser_manager = BrowserManager()
+
+            self.executablePath = browser_manager.get_orbita_path(browserMajorVersion)
+
         if self.local == False:
             self.downloadProfileZip()
         self.updatePreferences()
