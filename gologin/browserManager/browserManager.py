@@ -82,7 +82,7 @@ class BrowserManager:
         else:
             temp_extract_dir = os.path.join(self.browser_dir, f"temp-extract-{major_version}")
             os.makedirs(temp_extract_dir, exist_ok=True)
-            subprocess.run(['tar', '-xzf', temp_file, '-C', extracted_dir], check=True)
+            subprocess.run(['tar', '-xzf', temp_file, '-C', temp_extract_dir], check=True)
             subfolders = [f for f in os.listdir(temp_extract_dir) if os.path.isdir(os.path.join(temp_extract_dir, f))]
             
             if subfolders:
