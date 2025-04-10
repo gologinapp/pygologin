@@ -4,21 +4,16 @@ from selenium import webdriver
 from gologin import GoLogin
 from gologin import getRandomPort
 from selenium.webdriver.chrome.service import Service
+from webdriver_manager.chrome import ChromeDriverManager
 
 gl = GoLogin({
 	"token": "Your token",
 	"profile_id": "Your profile id"
 	})
 
-if platform == "linux" or platform == "linux2":
-	chrome_driver_path = "./chromedriver"
-elif platform == "darwin":
-	chrome_driver_path = "./mac/chromedriver"
-elif platform == "win32":
-	chrome_driver_path = "chromedriver.exe"
-
 debugger_address = gl.start()
-service = Service(executable_path=chrome_driver_path)
+chromium_version = gl.get_chromium_version()
+service = Service(ChromeDriverManager(driver_version=chromium_version).install())
 
 chrome_options = webdriver.ChromeOptions()
 chrome_options.add_experimental_option("debuggerAddress", debugger_address)

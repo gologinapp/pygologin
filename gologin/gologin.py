@@ -20,7 +20,7 @@ from .browserManager import BrowserManager
 API_URL = 'https://api.gologin.com'
 PROFILES_URL = 'https://gprofiles-new.gologin.com/'
 GET_TIMEZONE_URL = 'https://geo.myip.link'
-FILES_GATEWAY = 'https://files-gateway.gologin.com'
+FILES_GATEWAY = 'https://storage-worker-test.gologin.com'
 
 class ProtocolException(Exception):
     def __init__(self, data:dict):
@@ -168,6 +168,9 @@ class GoLogin(object):
         if self.spawn_browser == True:
             return self.spawnBrowser()
         return profile_path
+    
+    def get_chromium_version(self):
+        return self.chromium_version
 
     def zipdir(self, path, ziph):
         for root, dirs, files in os.walk(path):
@@ -608,8 +611,13 @@ class GoLogin(object):
 
             uaVersion = self.profile.get('navigator', {}).get('userAgent', '')
 
-            browserMajorVersion = uaVersion.split('Chrome/')[1].split('.')[0]
-
+            # Extract the full Chrome version from the user agent string
+            chrome_version_part = uaVersion.split('Chrome/')[1].split(' ')[0] if 'Chrome/' in uaVersion else ''
+            browserMajorVersion = chrome_version_part.split('.')[0] if chrome_version_part else ''
+            print('browserMajorVersion', browserMajorVersion)
+            print('chrome_version_part', chrome_version_part)
+            # Get the full version like 132.1.2.73
+            self.chromium_version = chrome_version_part
             browser_manager = BrowserManager()
 
             self.executablePath = browser_manager.get_orbita_path(browserMajorVersion)
