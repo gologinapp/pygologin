@@ -1,12 +1,9 @@
-# pygologin
- REST API provides programmatic access to GoLogin App. Create a new browser profile, get a list of all browser profiles, add a browser profile and running 
-
-# class GoLogin - class for working with <a href="https://gologin.com" target="_blank">gologin.com</a> API
-# Official Package
+# pygologin - GoLogin Python SDK
+ This package provides functionality to run and stop GoLogin profiles with python and then connect the profiles to automation tools like Selenium, Puppetteer, Playwright etc.
 
 ## Getting Started
 
-GoLogin supports Linux, MacOS and Windows platforms.
+Before you can make requests to the GoLogin API, you will need to grab your API key from your dashboard. You find it here https://app.gologin.com/personalArea/TokenApi.
 
 ### Installation
 
