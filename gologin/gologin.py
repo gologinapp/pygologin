@@ -52,7 +52,7 @@ class GoLogin(object):
         self.uploadCookiesToServer = options.get('uploadCookiesToServer', False)
         self.writeCookiesFromServer = options.get('writeCookiesFromServer', False)
         self.restore_last_session = options.get('restore_last_session', False)
-        self.executablePath = ''
+        self.executablePath = options.get('executable_path', '')
         self.is_cloud_headless = options.get('is_cloud_headless', True)
         self.is_new_cloud_browser = options.get('is_new_cloud_browser', True)
 
