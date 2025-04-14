@@ -16,6 +16,8 @@ import psutil
 from .extensionsManager import ExtensionsManager
 from .cookiesManager import CookiesManager
 from .browserManager import BrowserManager
+from .zero_profile.preferences import zeroProfilePreferences
+from .zero_profile.bookmarks import zeroProfileBookmarks
 
 API_URL = 'https://api.gologin.com'
 PROFILES_URL = 'https://gprofiles-new.gologin.com/'
@@ -32,6 +34,10 @@ class ProtocolException(Exception):
 
 class GoLogin(object):
     def __init__(self, options):
+        if (options.get('token') == 'Your token'):
+            raise Exception('Token is required')
+        if (options.get('profile_id') == 'Your profile id'):
+            raise Exception('Profile ID is required')
         self.access_token = options.get('token')
         self.profile_id = options.get('profile_id')
         self.tmpdir = options.get('tmpdir', tempfile.gettempdir())
@@ -312,8 +318,8 @@ class GoLogin(object):
             'Authorization': 'Bearer ' + self.access_token,
             'User-Agent': 'Selenium-API'
         }
-        data = json.loads(requests.get(API_URL + '/browser/' +
-                          profile, headers=headers).content.decode('utf-8'))
+        data = json.loads(requests.get(API_URL + '/browser/features/' +
+                          profile + '/info-for-run', headers=headers).content.decode('utf-8'))
         if data.get("statusCode") == 404:
             raise Exception(data.get("error") + ": " + data.get("message"))
         return data
@@ -331,21 +337,11 @@ class GoLogin(object):
 
         data = requests.get(FILES_GATEWAY + '/download', headers=headers).content
 
-        if len(data) == 0:
-            print('data is 0 - creating empty profile')
-            self.createEmptyProfile()
-        else:
-            with open(self.profile_zip_path, 'wb') as f:
+        with open(self.profile_zip_path, 'wb') as f:
                 f.write(data)
 
-        try:
-            print('extracting profile')
-            self.extractProfileZip()
-        except Exception as e:
-            print('ERROR!', e)
-            self.uploadEmptyProfile()
-            self.createEmptyProfile()
-            self.extractProfileZip()
+
+        self.extractProfileZip()
 
         # if not os.path.exists(os.path.join(self.profile_path, 'Default', 'Preferences')):
         #     print('preferences not found - creating fresh profile content')
@@ -353,69 +349,36 @@ class GoLogin(object):
         #     self.createEmptyProfile()
         #     self.extractProfileZip()
 
-    def downloadProfileZipOld(self):
-        print("downloadProfileZip")
-        s3path = self.profile.get('s3Path', '')
-        data = ''
-        if s3path == '':
-            # print('downloading profile direct')
-            headers = {
-                'Authorization': 'Bearer ' + self.access_token,
-                'User-Agent': 'Selenium-API'
-            }
-            data = requests.get(API_URL + '/browser/' +
-                                self.profile_id, headers=headers).content
-        else:
-            # print('downloading profile s3')
-            s3url = PROFILES_URL + s3path.replace(' ', '+')
-            data = requests.get(s3url).content
-
-        if len(data) == 0:
-            print('data is 0 - creating fresh profile content')
-            self.createEmptyProfile()
-        else:
-            print('data is not 0')
-            with open(self.profile_zip_path, 'wb') as f:
-                f.write(data)
-
-        try:
-            print('extracting profile')
-            self.extractProfileZip()
-        except Exception as e:
-            print('exception', e)
-            self.uploadEmptyProfile()
-            self.createEmptyProfile()
-            self.extractProfileZip()
-
-        if not os.path.exists(os.path.join(self.profile_path, 'Default', 'Preferences')):
-            print('preferences not found - creating fresh profile content')
-            self.uploadEmptyProfile()
-            self.createEmptyProfile()
-            self.extractProfileZip()
-
-    def uploadEmptyProfile(self):
-        print('uploadEmptyProfile')
-        upload_profile = open(r'./gologin_zeroprofile.zip', 'wb')
-        source = requests.get(PROFILES_URL + 'zero_profile.zip')
-        upload_profile.write(source.content)
-        upload_profile.close
-
     def createEmptyProfile(self):
         print('createEmptyProfile')
-        empty_profile = '../gologin_zeroprofile.zip'
+        default_path = os.path.join(self.profile_path, 'Default')
+        network_path = os.path.join(default_path, 'Network')
+        
+        os.makedirs(network_path, exist_ok=True)
+        
+        preferences_file_path = os.path.join(default_path, 'Preferences')
+        bookmarks_file_path = os.path.join(default_path, 'Bookmarks')
+        cookies_file_path = os.path.join(network_path, 'Cookies')
+        cookies_file_second_path = os.path.join(default_path, 'Cookies')
+        
+        create_cookies_table_query = self.profile.get('createCookiesTableQuery')
+        
+        with open(preferences_file_path, 'w') as f:
+            json.dump(zeroProfilePreferences, f)
+        
+        with open(bookmarks_file_path, 'w') as f:
+            json.dump(zeroProfileBookmarks, f)
 
-        if not os.path.exists(empty_profile):
-            empty_profile = 'gologin_zeroprofile.zip'
-
-        if os.path.exists(empty_profile):
-            shutil.copy(empty_profile, self.profile_zip_path)
-
-        if not os.path.exists(empty_profile):
-            print('downloading zero profile')
-            source = requests.get(PROFILES_URL + 'zero_profile.zip')
-            with open(self.profile_zip_path, 'wb') as profile_zip:
-                profile_zip.write(source.content)
-
+        cookiesManagerInst = CookiesManager(
+            profile_id=self.profile_id,
+            tmpdir=self.tmpdir
+        )
+        
+        cookiesManagerInst.create_db_file(
+            cookies_file_path=cookies_file_path,
+            cookies_file_second_path=cookies_file_second_path,
+            create_cookies_table_query=create_cookies_table_query
+        )
 
     def extractProfileZip(self):
 
@@ -608,7 +571,6 @@ class GoLogin(object):
         self.profile = self.getProfile()
 
         if (self.executablePath == ''):
-
             uaVersion = self.profile.get('navigator', {}).get('userAgent', '')
 
             # Extract the full Chrome version from the user agent string
@@ -622,35 +584,32 @@ class GoLogin(object):
 
             self.executablePath = browser_manager.get_orbita_path(browserMajorVersion)
 
-        if self.local == False:
+        isNewProfile = self.profile.get('storageInfo', {}).get('isNewProfile', False)
+        if self.local == False and not isNewProfile:
             self.downloadProfileZip()
+        if self.local == False and isNewProfile:
+            self.createEmptyProfile()
         self.updatePreferences()
 
-        print('writeCookiesFromServer', self.writeCookiesFromServer)
         if self.writeCookiesFromServer:
             self.downloadCookies()
             print('cookies downloaded')
         return self.profile_path
 
-
     def downloadCookies(self):
         api_base_url = API_URL
-        access_token = self.access_token
 
         cookiesManagerInst = CookiesManager(
             profile_id = self.profile_id,
             tmpdir = self.tmpdir
         )
 
-        try:
-            response = requests.get(f"{api_base_url}/browser/{self.profile_id}/cookies", headers={
-                'Authorization': f'Bearer {self.access_token}',
-                'user-agent': 'Selenium-API'
-            })
+        cookies_table_query = self.profile.get('createCookiesTableQuery')
+        cookiesData = self.profile.get('cookies')
+        cookies = cookiesData.get('cookies')
 
-            cookies = response.json()
-            print('COOKIES LENGTH', len(cookies))
-            cookiesManagerInst.write_cookies_to_file(cookies)
+        try:
+            cookiesManagerInst.write_cookies_to_file(cookies, False, cookies_table_query)
         except Exception as e:
             print('downloadCookies exc', e, e.__traceback__.tb_lineno)
             raise e
