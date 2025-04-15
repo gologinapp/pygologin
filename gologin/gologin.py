@@ -12,6 +12,14 @@ import tempfile
 import socket
 import random
 import psutil
+import logging
+
+logging.basicConfig(
+    level=logging.INFO,
+    format='%(asctime)s - %(name)s - %(levelname)s - %(message)s'
+)
+logger = logging.getLogger('gologin')
+logger.setLevel(logging.INFO)  # Default to INFO level
 
 from .extensionsManager import ExtensionsManager
 from .cookiesManager import CookiesManager
@@ -43,7 +51,7 @@ class GoLogin(object):
         self.tmpdir = options.get('tmpdir', tempfile.gettempdir())
         self.address = options.get('address', '127.0.0.1')
         self.extra_params = options.get('extra_params', [])
-        self.port = options.get('port', 3500)
+        self.port = options.get('port', getRandomPort())
         self.local = options.get('local', False)
         self.spawn_browser = options.get('spawn_browser', True)
         self.credentials_enable_service = options.get(
@@ -52,12 +60,15 @@ class GoLogin(object):
         self.uploadCookiesToServer = options.get('uploadCookiesToServer', False)
         self.writeCookiesFromServer = options.get('writeCookiesFromServer', False)
         self.restore_last_session = options.get('restore_last_session', False)
-        self.executablePath = ''
+        self.executablePath = options.get('executable_path', '')
         self.is_cloud_headless = options.get('is_cloud_headless', True)
         self.is_new_cloud_browser = options.get('is_new_cloud_browser', True)
 
+        if (options.get('debug')):
+            logger.setLevel(logging.DEBUG)
+
         if self.extra_params:
-            print('extra_params', self.extra_params)
+            logger.debug('extra_params: %s', self.extra_params)
         self.setProfileId(options.get('profile_id'))
         self.preferences = {}
         self.pid = int()
@@ -169,7 +180,6 @@ class GoLogin(object):
         return url
 
     def start(self):
-        print('start')
         profile_path = self.createStartup()
         if self.spawn_browser == True:
             return self.spawnBrowser()
@@ -197,7 +207,7 @@ class GoLogin(object):
             try:
                 os.rename(profile_path, profile_path)
             except OSError as e:
-                print("waiting chrome termination")
+                logger.debug("waiting chrome termination")
                 self.waitUntilProfileUsing(try_count+1)
 
     def stop(self):
@@ -213,7 +223,7 @@ class GoLogin(object):
         print('profile stopped')
 
     def commitProfile(self):
-        print('commitProfile')
+        logger.debug('commitProfile')
         zipf = zipfile.ZipFile(
             self.profile_zip_path_upload, 'w', zipfile.ZIP_DEFLATED)
         self.zipdir(self.profile_default_folder_path, zipf)
@@ -228,7 +238,7 @@ class GoLogin(object):
         }
 
         data = requests.put(FILES_GATEWAY + '/upload', data=open(self.profile_zip_path_upload, 'rb'), headers=headers)
-        print('commitProfile completed', data)
+        logger.debug('commitProfile completed: %s', data)
 
 
     def commitProfileOld(self):
@@ -325,9 +335,9 @@ class GoLogin(object):
         return data
 
     def downloadProfileZip(self):
-        print("downloadProfileZip")
+        logger.debug("downloadProfileZip")
         s3path = self.profile.get('s3Path', '')
-        print('s3path', s3path)
+        logger.debug('s3path: %s', s3path)
         data = ''
         headers = {
             'Authorization': 'Bearer ' + self.access_token,
@@ -350,7 +360,7 @@ class GoLogin(object):
         #     self.extractProfileZip()
 
     def createEmptyProfile(self):
-        print('createEmptyProfile')
+        logger.debug('createEmptyProfile')
         default_path = os.path.join(self.profile_path, 'Default')
         network_path = os.path.join(default_path, 'Network')
         
@@ -384,7 +394,7 @@ class GoLogin(object):
 
         with zipfile.ZipFile(self.profile_zip_path, 'r') as zip_ref:
             zip_ref.extractall(self.profile_path)
-        print('profile extracted', self.profile_path)
+        logger.debug('profile extracted: %s', self.profile_path)
         os.remove(self.profile_zip_path)
 
     def getGeolocationParams(self, profileGeolocationParams, tzGeolocationParams):
@@ -412,7 +422,7 @@ class GoLogin(object):
         screenWidth = int(resolution.split('x')[0])
         screenHeight = int(resolution.split('x')[1])
         langHeader = profileData.get('navigator', {}).get('language', '')
-        print('langHeader', langHeader)
+        logger.debug('langHeader: %s', langHeader)
         splittedLangs = langHeader.split(',')[0] if langHeader else 'en-US'
 
         startupUrl = profileData.get('startUrl', '').strip().split(',')[0]
@@ -518,7 +528,6 @@ class GoLogin(object):
         profile['profile_id'] = self.profile_id
 
         proxy = self.profile.get('proxy')
-        # print('proxy=', proxy)
         if proxy and (proxy.get('mode') == 'gologin' or proxy.get('mode') == 'tor'):
             autoProxyServer = profile.get('autoProxyServer')
             splittedAutoProxyServer = autoProxyServer.split('://')
@@ -538,7 +547,7 @@ class GoLogin(object):
             profile['proxy']['password'] = profile.get('autoProxyPassword')
 
         if not proxy or proxy.get('mode') == 'none':
-            print('no proxy')
+            logger.debug('no proxy')
             proxy = None
 
         if proxy and proxy.get('mode') == 'geolocation':
@@ -562,12 +571,12 @@ class GoLogin(object):
         json.dump(preferences, pfile)
 
     def createStartup(self):
-        print('createStartup', self.profile_path)
+        logger.debug('createStartup: %s', self.profile_path)
         if self.local == False and os.path.exists(self.profile_path):
             try:
                 shutil.rmtree(self.profile_path)
             except:
-                print("error removing profile", self.profile_path)
+                logger.debug("error removing profile: %s", self.profile_path)
         self.profile = self.getProfile()
 
         if (self.executablePath == ''):
@@ -576,8 +585,8 @@ class GoLogin(object):
             # Extract the full Chrome version from the user agent string
             chrome_version_part = uaVersion.split('Chrome/')[1].split(' ')[0] if 'Chrome/' in uaVersion else ''
             browserMajorVersion = chrome_version_part.split('.')[0] if chrome_version_part else ''
-            print('browserMajorVersion', browserMajorVersion)
-            print('chrome_version_part', chrome_version_part)
+            logger.debug('browserMajorVersion: %s', browserMajorVersion)
+            logger.debug('chrome_version_part: %s', chrome_version_part)
             # Get the full version like 132.1.2.73
             self.chromium_version = chrome_version_part
             browser_manager = BrowserManager()
@@ -611,7 +620,7 @@ class GoLogin(object):
         try:
             cookiesManagerInst.write_cookies_to_file(cookies, False, cookies_table_query)
         except Exception as e:
-            print('downloadCookies exc', e, e.__traceback__.tb_lineno)
+            logger.debug('downloadCookies exception: %s, line: %s', e, e.__traceback__.tb_lineno)
             raise e
 
 
@@ -626,7 +635,7 @@ class GoLogin(object):
             }, json=cookies)
             return response
         except Exception as e:
-            print('uploadCookies', e)
+            logger.debug('uploadCookies error: %s', e)
             return e
 
     def headers(self):
@@ -758,7 +767,7 @@ class GoLogin(object):
             json={'isNewCloudBrowser': self.is_new_cloud_browser, 'isHeadless': self.is_cloud_headless}
         ).content.decode('utf-8')
         response = json.loads(responseJson)
-        print('profileResponse', response)
+        logger.debug('profileResponse: %s', response)
 
         remote_orbita_url = 'https://' + self.profile_id + '.orbita.gologin.com'
         if self.is_new_cloud_browser:
