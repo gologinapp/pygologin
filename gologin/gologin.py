@@ -60,8 +60,8 @@ class GoLogin(object):
             'credentials_enable_service')
         self.cleaningLocalCookies = options.get('cleaningLocalCookies', False)
         self.uploadCookiesToServer = options.get('uploadCookiesToServer', False)
-        self.writeCookiesFromServer = options.get('writeCookiesFromServer', False)
-        self.restore_last_session = options.get('restore_last_session', False)
+        self.writeCookiesFromServer = options.get('writeCookiesFromServer', True)
+        self.restore_last_session = options.get('restore_last_session', True)
         self.executablePath = options.get('executable_path', '')
         self.is_cloud_headless = options.get('is_cloud_headless', True)
         self.is_new_cloud_browser = options.get('is_new_cloud_browser', True)
@@ -825,7 +825,7 @@ class GoLogin(object):
         profile = response.json()
         return profile.get('id')
 
-    def updateProfilesFingerprint(self, profileIds: list[str]):
+    def refreshProfilesFingerprint(self, profileIds: list[str]):
         if not profileIds:
             raise Exception('Profile ID is required')
 

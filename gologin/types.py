@@ -118,3 +118,17 @@ class CreateCustomBrowserOptions(TypedDict, total=False):
     chromeExtensions: List[str]
     userChromeExtensions: List[str]
     folders: List[str]
+
+class Cookie(TypedDict, total=False):
+    name: str
+    value: str
+    domain: str
+    path: str
+    expirationDate: Optional[float]
+    creationDate: Optional[float]
+    hostOnly: Optional[bool]
+    httpOnly: Optional[bool]
+    sameSite: Optional[Literal['no_restriction', 'lax', 'strict']]
+    secure: Optional[bool]
+    session: Optional[bool]
+    url: Optional[str]
