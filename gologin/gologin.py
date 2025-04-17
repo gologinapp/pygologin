@@ -14,6 +14,8 @@ import random
 import psutil
 import logging
 
+from .types import CreateCustomBrowserOptions, CreateProfileRandomFingerprintOptions, BrowserProxyCreateValidation
+
 logging.basicConfig(
     level=logging.INFO,
     format='%(asctime)s - %(name)s - %(levelname)s - %(message)s'
@@ -644,17 +646,83 @@ class GoLogin(object):
             'User-Agent': 'Selenium-API'
         }
 
-    def getRandomFingerprint(self, options):
+    def waitDebuggingUrl(self, delay_s, remote_orbita_url, try_count=3):
+        url = remote_orbita_url + '/json/version'
+        wsUrl = ''
+        try_number = 1
+        while wsUrl == '':
+            time.sleep(delay_s)
+            try:
+                response = json.loads(requests.get(url).content)
+                wsUrl = response.get('webSocketDebuggerUrl', '')
+            except:
+                pass
+            if try_number >= try_count:
+                return {'status': 'failure', 'wsUrl': wsUrl}
+            try_number += 1
+
+        remote_orbita_url_without_protocol = remote_orbita_url.replace(
+            'https://', '')
+        wsUrl = wsUrl.replace(
+            'ws://', 'wss://').replace('127.0.0.1', remote_orbita_url_without_protocol)
+
+        return {'status': 'success', 'wsUrl': wsUrl}
+
+    def startRemote(self, delay_s=3):
+        responseJson = requests.post(
+            API_URL + '/browser/' + self.profile_id + '/web',
+            headers=self.headers(),
+            json={'isNewCloudBrowser': self.is_new_cloud_browser, 'isHeadless': self.is_cloud_headless}
+        ).content.decode('utf-8')
+        response = json.loads(responseJson)
+        logger.debug('profileResponse: %s', response)
+
+        remote_orbita_url = 'https://' + self.profile_id + '.orbita.gologin.com'
+        if self.is_new_cloud_browser:
+            if not response['remoteOrbitaUrl']:
+                raise Exception('Couldn\' start the remote browser')
+            remote_orbita_url = response['remoteOrbitaUrl']
+
+        return self.waitDebuggingUrl(delay_s, remote_orbita_url=remote_orbita_url)
+
+    def stopRemote(self):
+        response = requests.delete(
+            API_URL + '/browser/' + self.profile_id + '/web',
+            headers=self.headers(),
+            params={'isNewCloudBrowser': self.is_new_cloud_browser}
+        )
+
+    def clearCookies(self, profile_id=None):
+        self.cleaningLocalCookies = True
+
+        profile = self.profile_id if profile_id == None else profile_id
+        resp = requests.post(API_URL + '/browser/' + profile +
+                             '/cookies?cleanCookies=true', headers=self.headers(), json=[])
+
+        if resp.status_code == 204:
+            return {'status': 'success'}
+        else:
+            return {'status': 'failure'}
+
+    async def normalizePageView(self, page):
+        if self.preferences.get("screenWidth") == None:
+            self.profile = self.getProfile()
+            self.preferences['screenWidth'] = int(self.profile.get(
+                "navigator").get("resolution").split('x')[0])
+            self.preferences['screenHeight'] = int(
+                self.profile.get("navigator").get("resolution").split('x')[1])
+        width = self.preferences.get("screenWidth")
+        height = self.preferences.get("screenHeight")
+        await page.setViewport({"width": width, "height": height})
+    
+    # api for managing profiles
+    def getRandomFingerprint(self, options: dict = {}):
         os_type = options.get('os', 'lin')
+        print(API_URL + '/browser/fingerprint?os=' + os_type)
         return json.loads(requests.get(API_URL + '/browser/fingerprint?os=' + os_type, headers=self.headers()).content.decode('utf-8'))
 
     def profiles(self):
         return json.loads(requests.get(API_URL + '/browser/v2', headers=self.headers()).content.decode('utf-8'))
-    
-    def createProfileRandomFingerprint(self, options={}):
-        response = json.loads(requests.post(
-            API_URL + '/browser/quick', headers=self.headers(), json=options).content.decode('utf-8'))
-        return response
 
     def create(self, options={}):
         profile_options = self.getRandomFingerprint(options)
@@ -735,77 +803,188 @@ class GoLogin(object):
             profile[k] = v
         resp = requests.put(API_URL + '/browser/' + self.profile_id,
                             headers=self.headers(), json=profile).content.decode('utf-8')
-        # print("update", resp)
-        # return json.loads(resp)
 
-    def waitDebuggingUrl(self, delay_s, remote_orbita_url, try_count=3):
-        url = remote_orbita_url + '/json/version'
-        wsUrl = ''
-        try_number = 1
-        while wsUrl == '':
-            time.sleep(delay_s)
-            try:
-                response = json.loads(requests.get(url).content)
-                wsUrl = response.get('webSocketDebuggerUrl', '')
-            except:
-                pass
-            if try_number >= try_count:
-                return {'status': 'failure', 'wsUrl': wsUrl}
-            try_number += 1
-
-        remote_orbita_url_without_protocol = remote_orbita_url.replace(
-            'https://', '')
-        wsUrl = wsUrl.replace(
-            'ws://', 'wss://').replace('127.0.0.1', remote_orbita_url_without_protocol)
-
-        return {'status': 'success', 'wsUrl': wsUrl}
-
-    def startRemote(self, delay_s=3):
-        responseJson = requests.post(
-            API_URL + '/browser/' + self.profile_id + '/web',
-            headers=self.headers(),
-            json={'isNewCloudBrowser': self.is_new_cloud_browser, 'isHeadless': self.is_cloud_headless}
-        ).content.decode('utf-8')
-        response = json.loads(responseJson)
-        logger.debug('profileResponse: %s', response)
-
-        remote_orbita_url = 'https://' + self.profile_id + '.orbita.gologin.com'
-        if self.is_new_cloud_browser:
-            if not response['remoteOrbitaUrl']:
-                raise Exception('Couldn\' start the remote browser')
-            remote_orbita_url = response['remoteOrbitaUrl']
-
-        return self.waitDebuggingUrl(delay_s, remote_orbita_url=remote_orbita_url)
-
-    def stopRemote(self):
-        response = requests.delete(
-            API_URL + '/browser/' + self.profile_id + '/web',
-            headers=self.headers(),
-            params={'isNewCloudBrowser': self.is_new_cloud_browser}
+    def createProfileWithCustomParams(self, options: CreateCustomBrowserOptions):
+        """Create a profile with custom parameters"""
+        response = requests.post(
+            f"{API_URL}/browser/custom",
+            headers={
+                'Authorization': f'Bearer {self.access_token}',
+                'User-Agent': 'gologin-api',
+            },
+            json=options
         )
 
-    def clearCookies(self, profile_id=None):
-        self.cleaningLocalCookies = True
+        if response.status_code == 400:
+            data = response.json()
+            raise Exception(f"gologin failed account creation with status code, {response.status_code} DATA {json.dumps(data)}")
 
-        profile = self.profile_id if profile_id == None else profile_id
-        resp = requests.post(API_URL + '/browser/' + profile +
-                             '/cookies?cleanCookies=true', headers=self.headers(), json=[])
+        if response.status_code == 500:
+            raise Exception(f"gologin failed account creation with status code, {response.status_code}")
 
-        if resp.status_code == 204:
-            return {'status': 'success'}
+        profile = response.json()
+        return profile.get('id')
+
+    def updateProfilesFingerprint(self, profileIds: list[str]):
+        if not profileIds:
+            raise Exception('Profile ID is required')
+
+        response = requests.patch(
+            f"{API_URL}/browser/fingerprints",
+            headers={
+                'Authorization': f'Bearer {self.access_token}',
+                'User-Agent': 'gologin-api',
+                'Content-Type': 'application/json',
+            },
+            json={"browsersIds": profileIds}
+        )
+
+        return response.json()
+
+    def createProfileRandomFingerprint(self, options: CreateProfileRandomFingerprintOptions):
+        if options is None:
+            options = {}
+            
+        os_type = options.get('os', 'lin')
+        name = options.get('name', 'api-generated')
+
+        response = requests.post(
+            f"{API_URL}/browser/quick",
+            headers={
+                'Authorization': f'Bearer {self.access_token}',
+                'User-Agent': 'gologin-api',
+                'Content-Type': 'application/json',
+            },
+            json={
+                "os": os_type,
+                "osSpec": options.get('osSpec', ''),
+                "name": name,
+            }
+        )
+
+        return response.json()
+
+    def updateUserAgentToLatestBrowser(self, profileIds, workspaceId=''):
+        """Update user agent to latest browser version"""
+        url = f"{API_URL}/browser/update_ua_to_new_browser_v"
+        if workspaceId:
+            url += f"?currentWorkspace={workspaceId}"
+
+        response = requests.patch(
+            url,
+            headers={
+                'Authorization': f'Bearer {self.access_token}',
+                'User-Agent': 'gologin-api',
+                'Content-Type': 'application/json',
+            },
+            json={
+                "browserIds": profileIds,
+                "updateUaToNewBrowserV": True,
+                "updateAllProfiles": False,
+                "testOrbita": False
+            }
+        )
+
+        return response.json()
+
+    def changeProfileProxy(self, profileId: str, proxyData: BrowserProxyCreateValidation):
+        """Change proxy settings for a profile"""
+        logger.debug(f"Changing proxy for profile {profileId}: {proxyData}")
+        response = requests.patch(
+            f"{API_URL}/browser/{profileId}/proxy",
+            headers={
+                'Authorization': f'Bearer {self.access_token}',
+                'User-Agent': 'gologin-api',
+                'Content-Type': 'application/json',
+            },
+            json=proxyData
+        )
+
+        return response.status_code
+
+    def getAvailableType(self, availableTrafficData):
+        """Determine available proxy type based on traffic data"""
+        if availableTrafficData['mobileTrafficData']['trafficUsedBytes'] > availableTrafficData['mobileTrafficData']['trafficLimitBytes']:
+            return 'mobile'
+        elif availableTrafficData['residentialTrafficData']['trafficUsedBytes'] < availableTrafficData['residentialTrafficData']['trafficLimitBytes']:
+            return 'resident'
+        elif availableTrafficData['dataCenterTrafficData']['trafficUsedBytes'] < availableTrafficData['dataCenterTrafficData']['trafficLimitBytes']:
+            return 'dataCenter'
         else:
-            return {'status': 'failure'}
+            return 'none'
 
-    async def normalizePageView(self, page):
-        if self.preferences.get("screenWidth") == None:
-            self.profile = self.getProfile()
-            self.preferences['screenWidth'] = int(self.profile.get(
-                "navigator").get("resolution").split('x')[0])
-            self.preferences['screenHeight'] = int(
-                self.profile.get("navigator").get("resolution").split('x')[1])
-        width = self.preferences.get("screenWidth")
-        height = self.preferences.get("screenHeight")
-        await page.setViewport({"width": width, "height": height})
+    def addGologinProxyToProfile(self, profileId, countryCode, proxyType=''):
+        """Add Gologin proxy to a profile"""
+        trafficLimitMessage = "Traffic limit exceeded"
+        
+        if not proxyType:
+            availableTraffic = requests.get(
+                f"{API_URL}/users-proxies/geolocation/traffic",
+                headers={
+                    'Authorization': f'Bearer {self.access_token}',
+                    'User-Agent': 'gologin-api',
+                    'Content-Type': 'application/json',
+                }
+            )
+
+            availableTrafficData = availableTraffic.json()
+            logger.debug(f"Available traffic data: {availableTrafficData}")
+            availableType = self.getAvailableType(availableTrafficData)
+            if availableType == 'none':
+                raise Exception(trafficLimitMessage)
+
+            logger.debug(f"Available proxy type: {availableType}")
+            proxyType = availableType
+
+        isDc = False
+        isMobile = False
+
+        if proxyType == 'mobile':
+            isMobile = True
+            isDc = False
+        elif proxyType == 'resident':
+            isMobile = False
+            isDc = False
+        elif proxyType == 'dataCenter':
+            isMobile = False
+            isDc = True
+        else:
+            raise Exception('Invalid proxy type')
+
+        proxyResponse = requests.post(
+            f"{API_URL}/users-proxies/mobile-proxy",
+            headers={
+                'Authorization': f'Bearer {self.access_token}',
+                'User-Agent': 'gologin-api',
+                'Content-Type': 'application/json',
+            },
+            json={
+                "countryCode": countryCode,
+                "isDc": isDc,
+                "isMobile": isMobile,
+                "profileIdToLink": profileId,
+            }
+        )
+
+        proxy = proxyResponse.json()
+        if proxy.get('trafficLimitBytes', 0) < proxy.get('trafficUsedBytes', 0):
+            raise Exception(trafficLimitMessage)
+
+        return proxy
+
+    def addCookiesToProfile(self, profileId, cookies):
+        """Add cookies to a profile"""
+        response = requests.post(
+            f"{API_URL}/browser/{profileId}/cookies?fromUser=true",
+            headers={
+                'Authorization': f'Bearer {self.access_token}',
+                'User-Agent': 'gologin-api',
+                'Content-Type': 'application/json',
+            },
+            json=cookies
+        )
+
+        return response.status_code
 
 
 def getRandomPort():
