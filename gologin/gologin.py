@@ -14,7 +14,7 @@ import random
 import psutil
 import logging
 
-from .types import CreateCustomBrowserOptions, CreateProfileRandomFingerprintOptions, BrowserProxyCreateValidation
+from .golgoin_types import CreateCustomBrowserOptions, CreateProfileRandomFingerprintOptions, BrowserProxyCreateValidation
 
 logging.basicConfig(
     level=logging.INFO,

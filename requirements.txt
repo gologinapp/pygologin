@@ -1,4 +1,4 @@
 requests
 psutil
-webdriver-manager>=4.0.0
+webdriver_manager>=4.0.0
 selenium>=4.11.0
