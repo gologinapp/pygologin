@@ -5,7 +5,7 @@ with open("requirements.txt", "r") as f:
 
 setup(
     name='gologin',
-    version='2025.04.14121736',
+    version='2025.04.14173016',
     packages=find_packages(),
     install_requires=install_requires,
     author='GoLogin',
@@ -14,5 +14,8 @@ setup(
     long_description=open('README.md').read(),
     long_description_content_type='text/markdown',
     url='https://github.com/gologinapp/pygologin',
-    python_requires='>=3.5'
+    python_requires='>=3.5',
+    package_data={
+        "gologin": ["py.typed"],
+    },
 )

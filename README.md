@@ -1,154 +1,204 @@
 # pygologin - GoLogin Python SDK
  This package provides functionality to run and stop GoLogin profiles with python and then connect the profiles to automation tools like Selenium, Puppetteer, Playwright etc.
 
+# How does it work?
+ 1. You give SDK your dev token and profile id that you want to run
+ 2. SDK takes care of downloading, preparing your profile and starts the browser
+ 3. SDK gives you websocket url for automation tools
+ 4. You take this websocker url and connect it to the automation tool on your choice: Puppetteer, Selenium, Playwright etc
+ 5. Automation tool connects to browser and you can manage it through code
+
 ## Getting Started
 
-Before you can make requests to the GoLogin API, you will need to grab your API key from your dashboard. You find it here https://app.gologin.com/personalArea/TokenApi.
-
-### Installation
-
-
-`pip3 install gologin`
-
-or clone this repository
-
-`git clone https://github.com/gologinapp/pygologin.git`
-
-for running gologin-selenium.py install selenium
-
-`pip install selenium`
-
-for Selenium need download <a href="https://chromedriver.chromium.org/downloads" target="_blank">webdriver</a>
-
-### Usage
-
 Where is token? API token is <a href="https://app.gologin.com/#/personalArea/TokenApi" target="_blank">here</a>.
-To have an access to the page below you need <a href="https://app.gologin.com/#/createUser" target="_blank">register</a> GoLogin account.
 
 ![Token API in Settings](https://user-images.githubusercontent.com/12957968/146891933-c3b60b4d-c850-47a5-8adf-bc8c37372664.gif)
 
-### !!! Attention !!! If your selenium version is greater than or equal to 4.11, then you should use the "gologin-selenium_4.11.py" script, otherwise use "gologin-selenium.py" script
+### Installation
+`pip3 install gologin`
+
+for base case - we use selenium as it is the most popular tool
+`pip3 install -r requirements.txt`
 
 ### Example "gologin-selenium.py"
 
 ```py
 import time
-from sys import platform
-from selenium import webdriver
-from selenium.webdriver.chrome.options import Options
 from gologin import GoLogin
-from gologin import getRandomPort
+from selenium import webdriver
+from selenium.webdriver.chrome.service import Service
+from webdriver_manager.chrome import ChromeDriverManager
+profile_id = "Your profile id"
 
-# random_port = get_random_port() # uncomment to use random port
-
+# Initialize GoLogin
 gl = GoLogin({
-	"token": "yU0token",
-	"profile_id": "yU0Pr0f1leiD",
-	# "port": random_port
+	"token": "Your token",
+	"profile_id": profile_id
 	})
 
-if platform == "linux" or platform == "linux2":
-	chrome_driver_path = "./chromedriver"
-elif platform == "darwin":
-	chrome_driver_path = "./mac/chromedriver"
-elif platform == "win32":
-	chrome_driver_path = "chromedriver.exe"
-
+# Start Browser and get websocket url
 debugger_address = gl.start()
-chrome_options = Options()
+
+# Get Chromium version for webdriver
+chromium_version = gl.get_chromium_version()
+
+# Add proxy to profile
+gl.addGologinProxyToProfile(profile_id, "us")
+
+# Install webdriver
+service = Service(ChromeDriverManager(driver_version=chromium_version).install())
+
+chrome_options = webdriver.ChromeOptions()
 chrome_options.add_experimental_option("debuggerAddress", debugger_address)
-driver = webdriver.Chrome(executable_path=chrome_driver_path, options=chrome_options)
+
+driver = webdriver.Chrome(service=service, options=chrome_options)
+
+# Give command to Selenium to open the page
 driver.get("http://www.python.org")
-assert "Python" in driver.title
-driver.close()
-time.sleep(3)
+
+time.sleep(30)
+driver.quit()
+time.sleep(10)
 gl.stop()
 
 ```
 ### Running example:
 
-`python gologin-selenium.py`
+`python gologin-selenium_4_11.py`
 
 ###
 ### Methods
-#### constructor
+#### constructor - initiate your token, profile that you want to run and browser params
 
-- `options` <[Object]> Options for profile
-    - `autoUpdateBrowser` <[boolean]> do not ask whether download new browser version (default false)
-	- `token` <[string]> your API <a href="https://gologin.com/#/personalArea/TokenApi" target="_blank">token</a>
-	- `profile_id` <[string]> profile ID
-	- `executablePath` <[string]> path to executable Orbita file. Orbita will be downloaded automatically if not specified.
-    - `remote_debugging_port` <[int]> port for remote debugging
-	- `vncPort` <[integer]> port of VNC server if you using it
-    - `tmpdir` <[string]> path to temporary directore for saving profiles
-    - `extra_params` arrayof <[string]> extra params for browser orbita (ex. extentions etc.)
-    - `uploadCookiesToServer` <[boolean]> upload cookies to server after profile stopping (default false)
-    - `writeCookesFromServer` <[boolean]> download cookies from server and write to profile cookies file (default true)
-    - `port` <[integer]> Orbita start port (uncomment out the lines with "random port" and "port" in `gologin-selenium.py` to select a random launch port)
+Required options:
+- `token` <[string]> **Required** - your API <a href="https://gologin.com/#/personalArea/TokenApi" target="_blank">token</a>
+- `profile_id` <[string]> **Required** - profile ID (NOT PROFILE NAME)
+
+Optional options:
+- `executablePath` <[string]> path to executable Orbita file. Orbita will be downloaded automatically if not specified
+- `extra_params` arrayof <[string]> additional flags for browser start. For example: '--headles', '--load-extentions=path/to/extension'
+- `uploadCookiesToServer` <[boolean]> upload cookies to server after profile stopping (default false). It allows you to export cookies from api later.
+- `writeCookesFromServer` <[boolean]> if you have predefined cookies and you want browser to import it (default true).
 
 ```py
 gl = GoLogin({
-	"token": "yU0token",
-	"profile_id": "yU0Pr0f1leiD",
+	"token": "your token",
+	"profile_id": "your profile id",
+    "extra_params": ["--headless", "--load-extentions=path/to/extension"]
 	})
-
 ```
-#### Example create profile
-`python gologin-create-profile.py`
+#### createProfileRandomFingerprint - you pass os ('lin', 'win', 'mac') and profile name and we give you brand new shiny profile
 ```py
-from gologin import GoLogin
-
-
 gl = GoLogin({
-	"token": "yU0token",
+	"token": "your token",
 	})
+profile = gl.createProfileRandomFingerprint({"os": "lin", "name": "some name"})
+gl.setProfileId(profile['id'])
+```
 
-profile_id = gl.create({
-    "name": 'profile_mac',
-    "os": 'mac',
+
+#### createProfileWithCustomParams - This method creates a profile and you can pass any particular params to it. Full list of params you can find here - https://api.gologin.com/docs
+```py
+gl = GoLogin({
+	"token": "your token",
+	})
+profile = gl.createProfileWithCustomParams({
+    "os": "lin",
+    "name": "some name",
     "navigator": {
-        "language": 'en-US',
-        "userAgent": 'random', # Your userAgent (if you don't want to change, leave it at 'random')
-        "resolution": '1024x768', # Your resolution (if you want a random resolution - set it to 'random')
-        "platform": 'mac',
-    },
-    'proxyEnabled': True, # Specify 'false' if not using proxy
-    'proxy': {
-        'mode': 'gologin',
-        'autoProxyRegion': 'us' 
-        # 'host': '',
-        # 'port': '',
-        # 'username': '',
-        # 'password': '',
-    },
-    "webRTC": {
-        "mode": "alerted",
-        "enabled": True,
-    },
-});
-
-print('profile id=', profile_id);
-
-# gl.update({
-#     "id": 'yU0Pr0f1leiD',
-#     "name": 'profile_mac2',
-# });
-
-profile = gl.getProfile(profile_id);
-
-print('new profile name=', profile.get("name"));
-
-# gl.delete('yU0Pr0f1leiD')
-
+        "userAgent": "Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/119.0.0.0 Safari/537.36",
+        "resolution": "1920x1080",
+        "language": "en-US",
+        "platform": "Linux x86_64",
+        "hardwareConcurrency": 8,
+        "deviceMemory": 8,
+        "maxTouchPoints": 0
+    }
+})
+gl.setProfileId(profile['id'])
 ```
 
-#### start()  
+#### updateUserAgentToLatestBrowser - user agent is one of the most important thing in your fingerprint. It decides which browser version to run. This method help you to keep useragent up to date.
+```py
+gl = GoLogin({
+	"token": "your token",
+	})
+gl.updateUserAgentToLatestBrowser(["profineId1", "profileId2"], "workspceId(optional)")
+```
+
+#### addGologinProxyToProfile - Gologin provides high quality proxies with free traffic for paid users. Here you can add gologin proxy to profile, just pass country code
+```py
+gl = GoLogin({
+	"token": "your token",
+	})
+gl.addGologinProxyToProfile("profileId", "us")
+```
+
+#### addCookiesToProfile - You can pass cookies to the profile and browser will import it before starting
+```py
+gl = GoLogin({
+	"token": "your token",
+	})
+
+gl.addCookiesToProfile("profileId", [
+    {
+        "name": "session_id",
+        "value": "abc123",
+        "domain": "example.com",
+        "path": "/",
+        "expirationDate": 1719161018.307793,
+        "httpOnly": True,
+        "secure": True
+    },
+    {
+        "name": "user_preferences",
+        "value": "dark_mode",
+        "domain": "example.com",
+        "path": "/settings",
+        "sameSite": "lax"
+    }
+])
+```
+
+#### refreshProfilesFingerprint - Replaces your profile fingerprint with a new one
+```py
+gl = GoLogin({
+	"token": "your token",
+	})
+
+gl.refreshProfilesFingerprint(["profileId1", "profileId2"])
+```
+
+#### changeProfileProxy - allows you to set a proxy to a profile
+```py
+gl = GoLogin({
+	"token": "your token",
+	})
+gl.changeProfileProxy("profileId", { "mode": "http", "host": "somehost.com", "port": 109, "username": "someusername", "password": "somepassword"})
+```
+
+#### start() - prepares profile, starts browser and returns websocket url
+```py
+gl = GoLogin({
+	"token": "your token",
+    "profile_id": "some_profile_id"
+	})
+
+wsUrl = gl.start()
+```
 
 start browser with profile id
 
-#### stop()  
+#### stop() - stops browser, saves profile and upload it to the storage
+```py
+gl = GoLogin({
+	"token": "your token",
+    "profile_id": "some_profile_id"
+	})
 
-stop browser with profile id
+wsUrl = gl.start()
+gl.stop()
+```
 
 ## Full GoLogin API
 **Swagger:** <a href="https://api.gologin.com/docs" target="_blank">link here</a>
