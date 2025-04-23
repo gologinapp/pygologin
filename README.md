@@ -64,7 +64,7 @@ gl.stop()
 ```
 ### Running example:
 
-`python gologin-selenium_4_11.py`
+`python3 examples/selenium/one-time-use-profile.py`
 
 ###
 ### Methods
