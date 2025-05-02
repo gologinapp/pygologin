@@ -2,7 +2,7 @@
 
 Combined changelog for GoLogin python SDK
 
-## [2025.4.22172740] 2025-05-02
+## [2025.5.2134227] 2025-05-02
 
 
 ### Bug fixes
