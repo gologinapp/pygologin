@@ -602,7 +602,7 @@ class GoLogin(object):
             self.createEmptyProfile()
         self.updatePreferences()
 
-        if self.writeCookiesFromServer:
+        if self.writeCookiesFromServer and self.profile.get('cookies').get('userCookies'):
             self.downloadCookies()
             print('cookies downloaded')
         return self.profile_path

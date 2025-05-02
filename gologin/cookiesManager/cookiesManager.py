@@ -267,16 +267,11 @@ class CookiesManager():
         cursor = db.cursor()
 
         try:
-            if unique_cookies:
+            if len(unique_cookies) > 0:
                 chunk_insert_values = self.get_chunked_insert_values(unique_cookies)
                 for query, query_params in chunk_insert_values:
                     for params in query_params:
                         res = cursor.execute(query, params)
-
-            else:
-                query = 'delete from cookies'
-                cursor.execute(query)
-
             db.commit()
             db.close()
         except Exception as error:
