@@ -1,0 +1,35 @@
+name: Test App
+
+on: [workflow_dispatch]
+
+jobs:
+  build:
+    timeout-minutes: 10
+    runs-on: ubuntu-latest
+
+    strategy:
+      matrix:
+        node-version: [18.x]
+
+    steps:
+      - uses: actions/checkout@v1
+
+      - name: Use Node.js ${{ matrix.node-version }}
+        uses: actions/setup-node@v1
+        with:
+          node-version: ${{ matrix.node-version }}
+
+      - name: Install system dependencies
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y libnss3 libatk-bridge2.0-0 libdrm2 libxkbcommon0 libgbm1 libxss1 libasound2t64 fonts-liberation libcups2 libxcomposite1 libxdamage1 libxrandr2 libxfixes3 libxtst6 libxi6 libx11-xcb1 libx11-6 libxcb1 libxext6 libxrender1 libcairo2 libglib2.0-0 libgtk-3-0 libgdk-pixbuf2.0-0 libpango-1.0-0 libpangocairo-1.0-0 libatk1.0-0 libcairo-gobject2 libxshmfence1 libgl1-mesa-dri libegl1 libxau6 libxdmcp6 libappindicator3-1 xdg-utils
+          pip install -r requirements.txt
+          pip install -e .
+
+      - name: Run and test app
+        working-directory: ./
+        run: |
+          python test/run_tests.py
+        env:
+          GL_API_TOKEN: ${{ secrets.GL_API_TOKEN }}
+          GL_PROFILE_ID: ${{ secrets.GL_PROFILE_ID }}

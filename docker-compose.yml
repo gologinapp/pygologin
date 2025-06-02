@@ -1,0 +1,35 @@
+version: '3.8'
+
+services:
+  gologin-test:
+    image: python:3.11-bullseye
+    platform: linux/amd64
+    container_name: gologin-test
+    working_dir: /app
+    volumes:
+      - .:/app
+      - pip_cache:/root/.cache/pip
+    environment:
+      - GL_API_TOKEN=your_token_here
+      - GL_PROFILE_ID=your_profile_id_here
+    command: 
+      - sh
+      - -c
+      - |
+        echo 'Installing system dependencies...'
+        apt-get update
+        apt-get install -y wget gnupg unzip xvfb libnss3 libatk-bridge2.0-0 libdrm2 libxkbcommon0 libgbm1 libxss1 libasound2 fonts-liberation libcups2 libxcomposite1 libxdamage1 libxrandr2 libxfixes3 libxtst6 libxi6 libx11-xcb1 libx11-6 libxcb1 libxext6 libxrender1 libcairo2 libglib2.0-0 libgtk-3-0 libgdk-pixbuf2.0-0 libpango-1.0-0 libpangocairo-1.0-0 libatk1.0-0 libcairo-gobject2 libxshmfence1 libgl1-mesa-glx libgl1-mesa-dri libegl1-mesa libxau6 libxdmcp6 libappindicator3-1 xdg-utils ca-certificates
+        echo 'Installing Python dependencies...'
+        pip install -r requirements.txt
+        pip install -e .
+        echo 'Running tests...'
+        python test/run_tests.py
+    networks:
+      - gologin-network
+
+volumes:
+  pip_cache:
+
+networks:
+  gologin-network:
+    driver: bridge 
