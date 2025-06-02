@@ -2,3 +2,4 @@ requests
 psutil
 webdriver_manager>=4.0.0
 selenium>=4.11.0
+sentry-sdk>=2.29.1
