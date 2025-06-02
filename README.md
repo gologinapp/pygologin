@@ -205,3 +205,14 @@ gl.stop()
 
 **Postman:** <a href="https://documenter.getpostman.com/view/21126834/Uz5GnvaL" target="_blank">link here</a>
 
+## Telemetry
+
+This package collects anonymous error data to help improve reliability.
+
+### How to disable:
+- Set environment variable: `DISABLE_TELEMETRY=true`
+
+### Data handling:
+- No personal information collected
+- Data stored securely
+- Used only for bug fixes and improvements

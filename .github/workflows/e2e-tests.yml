@@ -1,6 +1,8 @@
 name: Test App
 
-on: [workflow_dispatch]
+on:
+  push:
+    branches: [ main ]
 
 jobs:
   build:

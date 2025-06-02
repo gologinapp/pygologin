@@ -1,9 +1,6 @@
 name: Publish to PyPI
 
-on:
-  push:
-    branches:
-      - main
+on: [workflow_dispatch]
 
 jobs:
   publish:
@@ -28,9 +25,6 @@ jobs:
       run: |
         git config --global user.email "yuri@gologin.com"
         git config --global user.name "Gologin"
-
-    - name: Bump version
-      run: bump2version --new-version $(date +"%Y.%m.%d%H%M%S") patch
 
     - name: Build and publish
       env:
