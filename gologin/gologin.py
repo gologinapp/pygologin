@@ -430,7 +430,30 @@ class GoLogin(object):
         startupUrl = profileData.get('startUrl', '').strip().split(',')[0]
         startupUrls = [url.strip() for url in profileData.get('startUrl', '').split(',') if url.strip()]
         self.tz = self.getTimeZone()
-
+        if self.proxy.get('id'):
+            status_body = {
+                'proxies': [
+                    {
+                        'id': self.proxy.get('id'),
+                        'status': True,
+                        'country': self.tz.get('country'),
+                        'city': self.tz.get('city'),
+                        'lastIp': self.tz.get('ip'),
+                        'timezone': self.tz.get('timezone'),
+                        'checkDate': int(time.time())
+                    }
+                ]
+            }
+            print(status_body)
+            try:
+                requests.post(
+                    f"{API_URL}/proxy/set_proxy_statuses",
+                    json=status_body,
+                    headers={'Authorization': f'Bearer {self.access_token}'},
+                    timeout=13
+                )
+            except Exception as e:
+                print(e)
         preferences = {
             'profile_id': profileData.get('id'),
             'name': profileData.get('name'),
