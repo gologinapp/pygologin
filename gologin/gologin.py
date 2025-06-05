@@ -15,6 +15,7 @@ import psutil
 import logging
 
 from .golgoin_types import CreateCustomBrowserOptions, CreateProfileRandomFingerprintOptions, BrowserProxyCreateValidation
+from .http_client import make_request
 
 logging.basicConfig(
     level=logging.INFO,
@@ -239,8 +240,8 @@ class GoLogin(object):
             'browserId': self.profile_id
         }
 
-        data = requests.put(FILES_GATEWAY + '/upload', data=open(self.profile_zip_path_upload, 'rb'), headers=headers)
-        logger.debug('commitProfile completed: %s', data)
+        response = make_request('PUT', FILES_GATEWAY + '/upload', headers=headers, data=open(self.profile_zip_path_upload, 'rb'))
+        logger.debug('commitProfile completed: %s', response)
 
 
     def commitProfileOld(self):
@@ -253,12 +254,11 @@ class GoLogin(object):
             'Authorization': 'Bearer ' + self.access_token,
             'User-Agent': 'Selenium-API'
         }
-        # print('profile size=', os.stat(self.profile_zip_path_upload).st_size)
 
-        signedUrl = requests.get(API_URL + '/browser/' + self.profile_id +
-                                 '/storage-signature', headers=headers).content.decode('utf-8')
+        response = make_request('GET', API_URL + '/browser/' + self.profile_id + '/storage-signature', headers=headers)
+        signedUrl = response.content.decode('utf-8')
 
-        requests.put(signedUrl, data=open(self.profile_zip_path_upload, 'rb'))
+        make_request('PUT', signedUrl, data=open(self.profile_zip_path_upload, 'rb'))
 
         # print('commit profile complete')
 
@@ -319,10 +319,10 @@ class GoLogin(object):
                 'http': self.formatProxyUrlPassword(proxy),
                 'https': self.formatProxyUrlPassword(proxy)
             }
-            data = requests.get(GET_TIMEZONE_URL, proxies=proxies)
+            response = make_request('GET', GET_TIMEZONE_URL, proxies=proxies)
         else:
-            data = requests.get(GET_TIMEZONE_URL)
-        return json.loads(data.content.decode('utf-8'))
+            response = make_request('GET', GET_TIMEZONE_URL)
+        return json.loads(response.content.decode('utf-8'))
 
     def getProfile(self, profile_id=None):
         profile = self.profile_id if profile_id == None else profile_id
@@ -330,8 +330,9 @@ class GoLogin(object):
             'Authorization': 'Bearer ' + self.access_token,
             'User-Agent': 'Selenium-API'
         }
-        data = json.loads(requests.get(API_URL + '/browser/features/' +
-                          profile + '/info-for-run', headers=headers).content.decode('utf-8'))
+        response = make_request('GET', API_URL + '/browser/features/' + profile + '/info-for-run', headers=headers)
+        data = json.loads(response.content.decode('utf-8'))
+
         if data.get("statusCode") == 404:
             raise Exception(data.get("error") + ": " + data.get("message"))
         return data
@@ -347,7 +348,8 @@ class GoLogin(object):
             'browserId': self.profile_id
         }
 
-        data = requests.get(FILES_GATEWAY + '/download', headers=headers).content
+        response = make_request('GET', FILES_GATEWAY + '/download', headers=headers)
+        data = response.content
 
         with open(self.profile_zip_path, 'wb') as f:
                 f.write(data)
@@ -446,10 +448,11 @@ class GoLogin(object):
             }
             print(status_body)
             try:
-                requests.post(
+                make_request(
+                    'POST',
                     f"{API_URL}/proxy/set_proxy_statuses",
-                    json=status_body,
                     headers={'Authorization': f'Bearer {self.access_token}'},
+                    json_data=status_body,
                     timeout=13
                 )
             except Exception as e:
@@ -547,6 +550,7 @@ class GoLogin(object):
 
     def updatePreferences(self):
         pref_file = os.path.join(self.profile_path, 'Default', 'Preferences')
+        print('pref_file', pref_file)
         with open(pref_file, 'r', encoding="utf-8") as pfile:
             preferences = json.load(pfile)
         profile = self.profile
@@ -589,11 +593,13 @@ class GoLogin(object):
             exit()
 
         gologin = self.getGologinPreferences(profile)
+        # print('gologin', gologin)
         if self.credentials_enable_service != None:
             preferences['credentials_enable_service'] = self.credentials_enable_service
         preferences['gologin'] = gologin
-        pfile = open(pref_file, 'w')
-        json.dump(preferences, pfile)
+        with open(pref_file, 'w') as pfile:
+            # print('preferences', preferences)
+            json.dump(preferences, pfile)
 
     def createStartup(self):
         logger.debug('createStartup: %s', self.profile_path)
@@ -654,10 +660,15 @@ class GoLogin(object):
         access_token = self.access_token
 
         try:
-            response = requests.post(f"{api_base_url}/browser/{self.profile_id}/cookies/?encrypted=true", headers={
-                'Authorization': f'Bearer {self.access_token}',
-                'User-Agent': 'Selenium-API'
-            }, json=cookies)
+            response = make_request(
+                'POST',
+                f"{api_base_url}/browser/{self.profile_id}/cookies/?encrypted=true",
+                headers={
+                    'Authorization': f'Bearer {self.access_token}',
+                    'User-Agent': 'Selenium-API'
+                },
+                json_data=cookies
+            )
             return response
         except Exception as e:
             logger.debug('uploadCookies error: %s', e)
@@ -688,15 +699,17 @@ class GoLogin(object):
             'https://', '')
         wsUrl = wsUrl.replace(
             'ws://', 'wss://').replace('127.0.0.1', remote_orbita_url_without_protocol)
-
+        print('wsUrl', wsUrl)
         return {'status': 'success', 'wsUrl': wsUrl}
 
     def startRemote(self, delay_s=3):
-        responseJson = requests.post(
+        http_response = make_request(
+            'POST',
             API_URL + '/browser/' + self.profile_id + '/web',
             headers=self.headers(),
-            json={'isNewCloudBrowser': self.is_new_cloud_browser, 'isHeadless': self.is_cloud_headless}
-        ).content.decode('utf-8')
+            json_data={'isNewCloudBrowser': self.is_new_cloud_browser, 'isHeadless': self.is_cloud_headless}
+        )
+        responseJson = http_response.content.decode('utf-8')
         response = json.loads(responseJson)
         logger.debug('profileResponse: %s', response)
 
@@ -709,7 +722,8 @@ class GoLogin(object):
         return self.waitDebuggingUrl(delay_s, remote_orbita_url=remote_orbita_url)
 
     def stopRemote(self):
-        response = requests.delete(
+        response = make_request(
+            'DELETE',
             API_URL + '/browser/' + self.profile_id + '/web',
             headers=self.headers(),
             params={'isNewCloudBrowser': self.is_new_cloud_browser}
@@ -719,8 +733,12 @@ class GoLogin(object):
         self.cleaningLocalCookies = True
 
         profile = self.profile_id if profile_id == None else profile_id
-        resp = requests.post(API_URL + '/browser/' + profile +
-                             '/cookies?cleanCookies=true', headers=self.headers(), json=[])
+        resp = make_request(
+            'POST',
+            API_URL + '/browser/' + profile + '/cookies?cleanCookies=true',
+            headers=self.headers(),
+            json_data=[]
+        )
 
         if resp.status_code == 204:
             return {'status': 'success'}
@@ -742,10 +760,12 @@ class GoLogin(object):
     def getRandomFingerprint(self, options: dict = {}):
         os_type = options.get('os', 'lin')
         print(API_URL + '/browser/fingerprint?os=' + os_type)
-        return json.loads(requests.get(API_URL + '/browser/fingerprint?os=' + os_type, headers=self.headers()).content.decode('utf-8'))
+        response = make_request('GET', API_URL + '/browser/fingerprint?os=' + os_type, headers=self.headers())
+        return json.loads(response.content.decode('utf-8'))
 
     def profiles(self):
-        return json.loads(requests.get(API_URL + '/browser/v2', headers=self.headers()).content.decode('utf-8'))
+        response = make_request('GET', API_URL + '/browser/v2', headers=self.headers())
+        return json.loads(response.content.decode('utf-8'))
 
     def create(self, options={}):
         profile_options = self.getRandomFingerprint(options)
@@ -807,16 +827,15 @@ class GoLogin(object):
         for k, v in options.items():
             profile[k] = v
 
-        response = json.loads(requests.post(
-            API_URL + '/browser', headers=self.headers(), json=profile).content.decode('utf-8'))
+        http_response = make_request('POST', API_URL + '/browser', headers=self.headers(), json_data=profile)
+        response = json.loads(http_response.content.decode('utf-8'))
         if not (response.get('statusCode') is None):
             raise ProtocolException(response)
         return response.get('id')
 
     def delete(self, profile_id=None):
         profile = self.profile_id if profile_id == None else profile_id
-        requests.delete(API_URL + '/browser/' +
-                        profile, headers=self.headers())
+        make_request('DELETE', API_URL + '/browser/' + profile, headers=self.headers())
 
     def update(self, options):
         self.profile_id = options.get('id')
@@ -824,18 +843,19 @@ class GoLogin(object):
         # print("profile", profile)
         for k, v in options.items():
             profile[k] = v
-        resp = requests.put(API_URL + '/browser/' + self.profile_id,
-                            headers=self.headers(), json=profile).content.decode('utf-8')
+        resp = make_request('PUT', API_URL + '/browser/' + self.profile_id, headers=self.headers(), json_data=profile)
+        resp_content = resp.content.decode('utf-8')
 
     def createProfileWithCustomParams(self, options: CreateCustomBrowserOptions):
         """Create a profile with custom parameters"""
-        response = requests.post(
+        response = make_request(
+            'POST',
             f"{API_URL}/browser/custom",
             headers={
                 'Authorization': f'Bearer {self.access_token}',
                 'User-Agent': 'gologin-api',
             },
-            json=options
+            json_data=options
         )
 
         if response.status_code == 400:
@@ -852,14 +872,15 @@ class GoLogin(object):
         if not profileIds:
             raise Exception('Profile ID is required')
 
-        response = requests.patch(
+        response = make_request(
+            'PATCH',
             f"{API_URL}/browser/fingerprints",
             headers={
                 'Authorization': f'Bearer {self.access_token}',
                 'User-Agent': 'gologin-api',
                 'Content-Type': 'application/json',
             },
-            json={"browsersIds": profileIds}
+            json_data={"browsersIds": profileIds}
         )
 
         return response.json()
@@ -871,14 +892,15 @@ class GoLogin(object):
         os_type = options.get('os', 'lin')
         name = options.get('name', 'api-generated')
 
-        response = requests.post(
+        response = make_request(
+            'POST',
             f"{API_URL}/browser/quick",
             headers={
                 'Authorization': f'Bearer {self.access_token}',
                 'User-Agent': 'gologin-api',
                 'Content-Type': 'application/json',
             },
-            json={
+            json_data={
                 "os": os_type,
                 "osSpec": options.get('osSpec', ''),
                 "name": name,
@@ -893,14 +915,15 @@ class GoLogin(object):
         if workspaceId:
             url += f"?currentWorkspace={workspaceId}"
 
-        response = requests.patch(
+        response = make_request(
+            'PATCH',
             url,
             headers={
                 'Authorization': f'Bearer {self.access_token}',
                 'User-Agent': 'gologin-api',
                 'Content-Type': 'application/json',
             },
-            json={
+            json_data={
                 "browserIds": profileIds,
                 "updateUaToNewBrowserV": True,
                 "updateAllProfiles": False,
@@ -913,14 +936,15 @@ class GoLogin(object):
     def changeProfileProxy(self, profileId: str, proxyData: BrowserProxyCreateValidation):
         """Change proxy settings for a profile"""
         logger.debug(f"Changing proxy for profile {profileId}: {proxyData}")
-        response = requests.patch(
+        response = make_request(
+            'PATCH',
             f"{API_URL}/browser/{profileId}/proxy",
             headers={
                 'Authorization': f'Bearer {self.access_token}',
                 'User-Agent': 'gologin-api',
                 'Content-Type': 'application/json',
             },
-            json=proxyData
+            json_data=proxyData
         )
 
         return response.status_code
@@ -941,7 +965,8 @@ class GoLogin(object):
         trafficLimitMessage = "Traffic limit exceeded"
         
         if not proxyType:
-            availableTraffic = requests.get(
+            availableTraffic = make_request(
+                'GET',
                 f"{API_URL}/users-proxies/geolocation/traffic",
                 headers={
                     'Authorization': f'Bearer {self.access_token}',
@@ -974,7 +999,8 @@ class GoLogin(object):
         else:
             raise Exception('Invalid proxy type')
 
-        proxyResponse = requests.post(
+        proxyResponse = make_request(
+            'POST',
             f"{API_URL}/users-proxies/mobile-proxy",
             headers={
                 'Authorization': f'Bearer {self.access_token}',
@@ -997,7 +1023,8 @@ class GoLogin(object):
 
     def addCookiesToProfile(self, profileId, cookies):
         """Add cookies to a profile"""
-        response = requests.post(
+        response = make_request(
+            'POST',
             f"{API_URL}/browser/{profileId}/cookies?fromUser=true",
             headers={
                 'Authorization': f'Bearer {self.access_token}',
