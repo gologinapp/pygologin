@@ -216,3 +216,6 @@ This package collects anonymous error data to help improve reliability.
 - No personal information collected
 - Data stored securely
 - Used only for bug fixes and improvements
+
+## Privacy
+Our full privacy policy you can finde <a href="https://github.com/gologinapp/pygologin/tree/main/docs/PRIVACY.md">here</a>
