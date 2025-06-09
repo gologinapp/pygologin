@@ -13,6 +13,7 @@ import socket
 import random
 import psutil
 import logging
+import sentry_sdk
 
 from .golgoin_types import CreateCustomBrowserOptions, CreateProfileRandomFingerprintOptions, BrowserProxyCreateValidation
 from .http_client import make_request
@@ -66,6 +67,12 @@ class GoLogin(object):
         self.executablePath = options.get('executable_path', '')
         self.is_cloud_headless = options.get('is_cloud_headless', True)
         self.is_new_cloud_browser = options.get('is_new_cloud_browser', True)
+
+        if (os.environ.get('DISABLE_TELEMETRY') != 'true'):
+            sentry_sdk.init(
+                dsn="https://afee3f3cafb8de3939880af171b037e1@sentry-new.amzn.pro/25",
+                traces_sample_rate=1.0,
+            )
 
         if (options.get('debug')):
             logger.setLevel(logging.DEBUG)
@@ -183,10 +190,14 @@ class GoLogin(object):
         return url
 
     def start(self):
-        profile_path = self.createStartup()
-        if self.spawn_browser == True:
-            return self.spawnBrowser()
-        return profile_path
+        try:
+            profile_path = self.createStartup()
+            if self.spawn_browser == True:
+                return self.spawnBrowser()
+            return profile_path
+        except Exception as e:
+            sentry_sdk.capture_exception(e)
+            raise e
     
     def get_chromium_version(self):
         return self.chromium_version
