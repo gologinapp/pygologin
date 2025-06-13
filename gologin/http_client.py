@@ -53,7 +53,11 @@ class HTTPClient:
                     
                 except requests.exceptions.RequestException as retry_e:
                     logger.error(f"Retry request also failed: {method.upper()} {retry_url} - Error: {retry_e}")
-                    raise e
+                    raise 'Proxy check failed. Please check your proxy or network connection'
+            elif "geo.myip.link" in url:
+                raise 'Proxy check failed. Please check your proxy or network connection'
+            else:
+                raise e
 
 def make_request(
     method: str,

@@ -1,11 +1,17 @@
 from setuptools import setup, find_packages
+import os
 
 with open("requirements.txt", "r") as f:
     install_requires = [line.strip() for line in f.readlines()]
 
+# Read version from _version.py
+version_file = os.path.join(os.path.dirname(__file__), 'gologin', '_version.py')
+with open(version_file) as f:
+    __version__ = exec(f.read())
+
 setup(
     name='gologin',
-    version='2025.04.22172740',
+    version=__version__,
     packages=find_packages(),
     install_requires=install_requires,
     author='GoLogin',

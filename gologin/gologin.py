@@ -30,6 +30,7 @@ from .cookiesManager import CookiesManager
 from .browserManager import BrowserManager
 from .zero_profile.preferences import zeroProfilePreferences
 from .zero_profile.bookmarks import zeroProfileBookmarks
+from ._version import __version__
 
 API_URL = 'https://api.gologin.com'
 PROFILES_URL = 'https://gprofiles-new.gologin.com/'
@@ -69,9 +70,38 @@ class GoLogin(object):
         self.is_new_cloud_browser = options.get('is_new_cloud_browser', True)
 
         if (os.environ.get('DISABLE_TELEMETRY') != 'true'):
+            def before_send(event, hint):
+                ignored_errors = [
+                    'Error posting to',
+                    'Profile deleted or not found'
+                ]
+                if 'exc_info' in hint:
+                    exc_type, exc_value, tb = hint['exc_info']
+                    
+                    package_error = False
+                    current_tb = tb
+                    while current_tb:
+                        filename = current_tb.tb_frame.f_code.co_filename
+                        print('filename', filename)
+                        if 'gologin' in filename or 'pygologin' in filename:
+                            package_error = True
+                            break
+                        current_tb = current_tb.tb_next
+                    
+                    if not package_error:
+                        return None
+                    
+                    error_message = str(exc_value).lower()
+                    if any(ignored_msg.lower() in error_message for ignored_msg in ignored_errors):
+                        return None
+                        
+                return event
+            
             sentry_sdk.init(
                 dsn="https://afee3f3cafb8de3939880af171b037e1@sentry-new.amzn.pro/25",
                 traces_sample_rate=1.0,
+                release=__version__,
+                before_send=before_send
             )
 
         if (options.get('debug')):
@@ -321,7 +351,7 @@ class GoLogin(object):
         if proxy.get('username', '') == '':
             return mode+'://'+proxy.get('host', '')+':'+str(proxy.get('port', 80))
         else:
-            return mode+'://'+proxy.get('username', '')+':'+proxy.get('password')+'@'+proxy.get('host', '')+':'+str(proxy.get('port', 80))
+            return mode+'://'+proxy.get('username', '')+':'+proxy.get('password', '')+'@'+proxy.get('host', '')+':'+str(proxy.get('port', 80))
 
     def getTimeZone(self):
         proxy = self.proxy
@@ -443,7 +473,8 @@ class GoLogin(object):
         startupUrl = profileData.get('startUrl', '').strip().split(',')[0]
         startupUrls = [url.strip() for url in profileData.get('startUrl', '').split(',') if url.strip()]
         self.tz = self.getTimeZone()
-        if self.proxy.get('id'):
+
+        if self.proxy and self.proxy.get('id'):
             status_body = {
                 'proxies': [
                     {
@@ -468,6 +499,7 @@ class GoLogin(object):
                 )
             except Exception as e:
                 print(e)
+
         preferences = {
             'profile_id': profileData.get('id'),
             'name': profileData.get('name'),
@@ -561,7 +593,7 @@ class GoLogin(object):
 
     def updatePreferences(self):
         pref_file = os.path.join(self.profile_path, 'Default', 'Preferences')
-        print('pref_file', pref_file)
+
         with open(pref_file, 'r', encoding="utf-8") as pfile:
             preferences = json.load(pfile)
         profile = self.profile
