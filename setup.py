@@ -7,7 +7,7 @@ with open("requirements.txt", "r") as f:
 # Read version from _version.py
 version_file = os.path.join(os.path.dirname(__file__), 'gologin', '_version.py')
 with open(version_file) as f:
-    __version__ = exec(f.read())
+    exec(f.read())
 
 setup(
     name='gologin',
