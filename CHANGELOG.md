@@ -2,6 +2,14 @@
 
 Combined changelog for GoLogin python SDK
 
+## [2025.7.1] 2025-06-13
+
+
+### Bug fixes
+
+* Fixed error of profile run without proxy
+* Added small errors descriptions
+
 ## [2025.5.2134227] 2025-05-02
 
 
