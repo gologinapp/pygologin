@@ -1,6 +1,8 @@
 # pygologin - GoLogin Python SDK
  This package provides functionality to run and stop GoLogin profiles with python and then connect the profiles to automation tools like Selenium, Puppetteer, Playwright etc.
 
+## Check full gologin documentations <a href="https://gologin.com/docs/api-reference/introduction/quickstart" target="_blank">here</a>.
+
 # How does it work?
  1. You give SDK your dev token and profile id that you want to run
  2. SDK takes care of downloading, preparing your profile and starts the browser
@@ -199,11 +201,6 @@ gl = GoLogin({
 wsUrl = gl.start()
 gl.stop()
 ```
-
-## Full GoLogin API
-**Swagger:** <a href="https://api.gologin.com/docs" target="_blank">link here</a>
-
-**Postman:** <a href="https://documenter.getpostman.com/view/21126834/Uz5GnvaL" target="_blank">link here</a>
 
 ## Telemetry
 
