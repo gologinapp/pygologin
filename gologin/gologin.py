@@ -102,7 +102,8 @@ class GoLogin(object):
                 dsn="https://afee3f3cafb8de3939880af171b037e1@sentry-new.amzn.pro/25",
                 traces_sample_rate=1.0,
                 release=__version__,
-                before_send=before_send
+                before_send=before_send,
+                default_integrations=False
             )
 
         if (options.get('debug')):
