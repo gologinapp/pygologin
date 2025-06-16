@@ -2,6 +2,13 @@
 
 Combined changelog for GoLogin python SDK
 
+## [2025.7.2] 2025-06-16
+
+
+### Improvements
+
+* Added support for 135 version of orbita with new proxy schema
+
 ## [2025.7.1] 2025-06-13
 
 

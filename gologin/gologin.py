@@ -68,6 +68,7 @@ class GoLogin(object):
         self.executablePath = options.get('executable_path', '')
         self.is_cloud_headless = options.get('is_cloud_headless', True)
         self.is_new_cloud_browser = options.get('is_new_cloud_browser', True)
+        self.orbita_major_version = 0
 
         if (os.environ.get('DISABLE_TELEMETRY') != 'true'):
             def before_send(event, hint):
@@ -587,6 +588,22 @@ class GoLogin(object):
                 'id': self.tz.get('timezone', ''),
             },
         }
+
+        if self.orbita_major_version >= 135 and profileData.get('proxy', { 'mode': 'none'}).get('mode') != 'none':
+            serverString = profileData.get('proxy').get('mode') + '://'
+            if (profileData.get('proxy').get('username')):
+                serverString += profileData.get('proxy').get('username')
+            if (profileData.get('proxy').get('password')):
+                serverString += ':' + profileData.get('proxy').get('password')
+            serverString += '@' + profileData.get('proxy').get('host') + ':' + str(profileData.get('proxy').get('port'))
+
+            preferences['proxy'] = {
+                'mode': 'fixed_servers',
+                'schema': profileData.get('proxy').get('mode'),
+                'username': profileData.get('proxy').get('username'),
+                'password': profileData.get('proxy').get('password'),
+                'server': serverString
+            }
         self.preferences = preferences
 
         return preferences
@@ -636,7 +653,13 @@ class GoLogin(object):
             exit()
 
         gologin = self.getGologinPreferences(profile)
-        # print('gologin', gologin)
+
+        if (gologin.get('proxy', {}).get('mode') == 'fixed_servers'):
+            preferences['proxy'] = {
+                'mode': 'fixed_servers',
+                'server': gologin.get('proxy').get('server')
+            }
+
         if self.credentials_enable_service != None:
             preferences['credentials_enable_service'] = self.credentials_enable_service
         preferences['gologin'] = gologin
@@ -659,6 +682,7 @@ class GoLogin(object):
             # Extract the full Chrome version from the user agent string
             chrome_version_part = uaVersion.split('Chrome/')[1].split(' ')[0] if 'Chrome/' in uaVersion else ''
             browserMajorVersion = chrome_version_part.split('.')[0] if chrome_version_part else ''
+            self.orbita_major_version = int(browserMajorVersion)
             logger.debug('browserMajorVersion: %s', browserMajorVersion)
             logger.debug('chrome_version_part: %s', chrome_version_part)
             # Get the full version like 132.1.2.73
