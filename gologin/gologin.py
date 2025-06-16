@@ -173,16 +173,19 @@ class GoLogin(object):
             proxy = self.formatProxyUrl(proxy)
 
         tz = self.tz.get('timezone')
-
+        resolution = self.profile.get('navigator', {}).get('resolution', '1920x1080')
+        screenWidth = int(resolution.split('x')[0])
+        screenHeight = int(resolution.split('x')[1])
         params = [
             self.executablePath,
             '--remote-debugging-port='+str(self.port),
-            '--user-data-dir='+self.profile_path,
             '--password-store=basic',
             '--gologin-profile='+self.profile_name,
             '--lang=en-US',
             '--webrtc-ip-handling-policy=default_public_interface_only',
-            '--disable-features=PrintCompositorLPAC'
+            '--disable-features=PrintCompositorLPAC',
+            '--window-size='+str(screenWidth)+','+str(screenHeight),
+            '--user-data-dir='+self.profile_path,
         ]
 
         chromeExtensions = self.profile.get('chromeExtensions')
