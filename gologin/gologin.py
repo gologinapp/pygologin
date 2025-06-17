@@ -102,7 +102,8 @@ class GoLogin(object):
                 dsn="https://afee3f3cafb8de3939880af171b037e1@sentry-new.amzn.pro/25",
                 traces_sample_rate=1.0,
                 release=__version__,
-                before_send=before_send
+                before_send=before_send,
+                default_integrations=False
             )
 
         if (options.get('debug')):
@@ -172,16 +173,19 @@ class GoLogin(object):
             proxy = self.formatProxyUrl(proxy)
 
         tz = self.tz.get('timezone')
-
+        resolution = self.profile.get('navigator', {}).get('resolution', '1920x1080')
+        screenWidth = int(resolution.split('x')[0])
+        screenHeight = int(resolution.split('x')[1])
         params = [
             self.executablePath,
             '--remote-debugging-port='+str(self.port),
-            '--user-data-dir='+self.profile_path,
             '--password-store=basic',
             '--gologin-profile='+self.profile_name,
             '--lang=en-US',
             '--webrtc-ip-handling-policy=default_public_interface_only',
-            '--disable-features=PrintCompositorLPAC'
+            '--disable-features=PrintCompositorLPAC',
+            '--window-size='+str(screenWidth)+','+str(screenHeight),
+            '--user-data-dir='+self.profile_path,
         ]
 
         chromeExtensions = self.profile.get('chromeExtensions')
