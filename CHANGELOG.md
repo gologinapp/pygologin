@@ -2,6 +2,13 @@
 
 Combined changelog for GoLogin python SDK
 
+## [2025.7.3] 2025-06-17
+
+
+### Improvements
+
+* Browser resolution now inherits from profile settings
+
 ## [2025.7.2] 2025-06-16
 
 
