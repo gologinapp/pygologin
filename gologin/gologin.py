@@ -1078,7 +1078,7 @@ class GoLogin(object):
                 'User-Agent': 'gologin-api',
                 'Content-Type': 'application/json',
             },
-            json={
+            json_data={
                 "countryCode": countryCode,
                 "isDc": isDc,
                 "isMobile": isMobile,
@@ -1102,7 +1102,7 @@ class GoLogin(object):
                 'User-Agent': 'gologin-api',
                 'Content-Type': 'application/json',
             },
-            json=cookies
+            json_data=cookies
         )
 
         return response.status_code
