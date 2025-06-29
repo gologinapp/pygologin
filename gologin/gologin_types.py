@@ -6,6 +6,7 @@ T_OS_SPEC = Literal['M1', 'M2', 'M3', 'win11', '']
 class CreateProfileRandomFingerprintOptions(TypedDict):
     os: OS
     name: str
+    folderName: str
 
 class BookmarkChild(TypedDict):
     name: str
