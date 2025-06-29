@@ -15,7 +15,8 @@ import psutil
 import logging
 import sentry_sdk
 
-from .golgoin_types import CreateCustomBrowserOptions, CreateProfileRandomFingerprintOptions, BrowserProxyCreateValidation
+from .gologin_types import CreateCustomBrowserOptions, CreateProfileRandomFingerprintOptions, \
+    BrowserProxyCreateValidation
 from .http_client import make_request
 
 logging.basicConfig(
@@ -37,13 +38,16 @@ PROFILES_URL = 'https://gprofiles-new.gologin.com/'
 GET_TIMEZONE_URL = 'https://geo.myip.link'
 FILES_GATEWAY = 'https://storage-worker-test.gologin.com'
 
+
 class ProtocolException(Exception):
-    def __init__(self, data:dict):
-        self._json =data
+    def __init__(self, data: dict):
+        self._json = data
         super().__init__(data.__repr__())
+
     @property
     def json(self) -> dict:
         return self._json
+
 
 class GoLogin(object):
     def __init__(self, options):
@@ -78,7 +82,7 @@ class GoLogin(object):
                 ]
                 if 'exc_info' in hint:
                     exc_type, exc_value, tb = hint['exc_info']
-                    
+
                     package_error = False
                     current_tb = tb
                     while current_tb:
@@ -88,16 +92,16 @@ class GoLogin(object):
                             package_error = True
                             break
                         current_tb = current_tb.tb_next
-                    
+
                     if not package_error:
                         return None
-                    
+
                     error_message = str(exc_value).lower()
                     if any(ignored_msg.lower() in error_message for ignored_msg in ignored_errors):
                         return None
-                        
+
                 return event
-            
+
             sentry_sdk.init(
                 dsn="https://afee3f3cafb8de3939880af171b037e1@sentry-new.amzn.pro/25",
                 traces_sample_rate=1.0,
@@ -133,7 +137,7 @@ class GoLogin(object):
         self.profile_zip_path = os.path.join(
             self.tmpdir, 'gologin_' + self.profile_id + '.zip')
         self.profile_zip_path_upload = os.path.join(
-            self.tmpdir, 'gologin_' + self.profile_id+'_upload.zip')
+            self.tmpdir, 'gologin_' + self.profile_id + '_upload.zip')
 
     def loadExtensions(self):
         profile = self.profile
@@ -145,7 +149,7 @@ class GoLogin(object):
             try:
                 ver = extensionsManagerInst.downloadExt(ext)
                 pathToExt += os.path.join(pathlib.Path.home(), '.gologin',
-                                      'extensions', 'chrome-extensions', ext + '@' + ver + ',')
+                                          'extensions', 'chrome-extensions', ext + '@' + ver + ',')
                 profileExtensionsCheck.append(os.path.join(pathlib.Path.home(
                 ), '.gologin', 'extensions', 'chrome-extensions', ext + '@' + ver))
             except Exception as e:
@@ -178,14 +182,14 @@ class GoLogin(object):
         screenHeight = int(resolution.split('x')[1])
         params = [
             self.executablePath,
-            '--remote-debugging-port='+str(self.port),
+            '--remote-debugging-port=' + str(self.port),
             '--password-store=basic',
-            '--gologin-profile='+self.profile_name,
+            '--gologin-profile=' + self.profile_name,
             '--lang=en-US',
             '--webrtc-ip-handling-policy=default_public_interface_only',
             '--disable-features=PrintCompositorLPAC',
-            '--window-size='+str(screenWidth)+','+str(screenHeight),
-            '--user-data-dir='+self.profile_path,
+            '--window-size=' + str(screenWidth) + ',' + str(screenHeight),
+            '--user-data-dir=' + self.profile_path,
         ]
 
         chromeExtensions = self.profile.get('chromeExtensions')
@@ -197,8 +201,8 @@ class GoLogin(object):
 
         if proxy:
             hr_rules = 'MAP * 0.0.0.0 , EXCLUDE %s' % (proxy_host)
-            params.append('--proxy-server='+proxy)
-            params.append('--host-resolver-rules='+hr_rules)
+            params.append('--proxy-server=' + proxy)
+            params.append('--host-resolver-rules=' + hr_rules)
 
         if self.restore_last_session:
             params.append('--restore-last-session')
@@ -217,7 +221,7 @@ class GoLogin(object):
         url = str(self.address) + ':' + str(self.port)
         while try_count < 100:
             try:
-                data = requests.get('http://'+url+'/json').content
+                data = requests.get('http://' + url + '/json').content
                 break
             except:
                 try_count += 1
@@ -233,7 +237,7 @@ class GoLogin(object):
         except Exception as e:
             sentry_sdk.capture_exception(e)
             raise e
-    
+
     def get_chromium_version(self):
         return self.chromium_version
 
@@ -257,7 +261,7 @@ class GoLogin(object):
                 os.rename(profile_path, profile_path)
             except OSError as e:
                 logger.debug("waiting chrome termination")
-                self.waitUntilProfileUsing(try_count+1)
+                self.waitUntilProfileUsing(try_count + 1)
 
     def stop(self):
         for proc in psutil.process_iter(['pid']):
@@ -286,9 +290,9 @@ class GoLogin(object):
             'browserId': self.profile_id
         }
 
-        response = make_request('PUT', FILES_GATEWAY + '/upload', headers=headers, data=open(self.profile_zip_path_upload, 'rb'))
+        response = make_request('PUT', FILES_GATEWAY + '/upload', headers=headers,
+                                data=open(self.profile_zip_path_upload, 'rb'))
         logger.debug('commitProfile completed: %s', response)
-
 
     def commitProfileOld(self):
         zipf = zipfile.ZipFile(
@@ -348,15 +352,17 @@ class GoLogin(object):
                     continue
 
     def formatProxyUrl(self, proxy):
-        return proxy.get('mode', 'http')+'://'+proxy.get('host', '')+':'+str(proxy.get('port', 80))
+        return proxy.get('mode', 'http') + '://' + proxy.get('host', '') + ':' + str(proxy.get('port', 80))
 
     def formatProxyUrlPassword(self, proxy):
         mode = "socks5h" if proxy.get(
             "mode") == "socks5" else proxy.get("mode", "http")
         if proxy.get('username', '') == '':
-            return mode+'://'+proxy.get('host', '')+':'+str(proxy.get('port', 80))
+            return mode + '://' + proxy.get('host', '') + ':' + str(proxy.get('port', 80))
         else:
-            return mode+'://'+proxy.get('username', '')+':'+proxy.get('password', '')+'@'+proxy.get('host', '')+':'+str(proxy.get('port', 80))
+            return mode + '://' + proxy.get('username', '') + ':' + proxy.get('password', '') + '@' + proxy.get('host',
+                                                                                                                '') + ':' + str(
+                proxy.get('port', 80))
 
     def getTimeZone(self):
         proxy = self.proxy
@@ -398,8 +404,7 @@ class GoLogin(object):
         data = response.content
 
         with open(self.profile_zip_path, 'wb') as f:
-                f.write(data)
-
+            f.write(data)
 
         self.extractProfileZip()
 
@@ -413,19 +418,19 @@ class GoLogin(object):
         logger.debug('createEmptyProfile')
         default_path = os.path.join(self.profile_path, 'Default')
         network_path = os.path.join(default_path, 'Network')
-        
+
         os.makedirs(network_path, exist_ok=True)
-        
+
         preferences_file_path = os.path.join(default_path, 'Preferences')
         bookmarks_file_path = os.path.join(default_path, 'Bookmarks')
         cookies_file_path = os.path.join(network_path, 'Cookies')
         cookies_file_second_path = os.path.join(default_path, 'Cookies')
-        
+
         create_cookies_table_query = self.profile.get('createCookiesTableQuery')
-        
+
         with open(preferences_file_path, 'w') as f:
             json.dump(zeroProfilePreferences, f)
-        
+
         with open(bookmarks_file_path, 'w') as f:
             json.dump(zeroProfileBookmarks, f)
 
@@ -433,7 +438,7 @@ class GoLogin(object):
             profile_id=self.profile_id,
             tmpdir=self.tmpdir
         )
-        
+
         cookiesManagerInst.create_db_file(
             cookies_file_path=cookies_file_path,
             cookies_file_second_path=cookies_file_second_path,
@@ -549,7 +554,8 @@ class GoLogin(object):
             'webgl_noise_enable': profileData.get('webGL', {}).get('mode') == 'noise',
             'webgl_noise_value': profileData.get('webGL', {}).get('noise'),
             'webglNoiseValue': profileData.get('webGL', {}).get('noise'),
-            'getClientRectsNoice': profileData.get('clientRects', {}).get('noise') or profileData.get('webGL', {}).get('getClientRectsNoise'),
+            'getClientRectsNoice': profileData.get('clientRects', {}).get('noise') or profileData.get('webGL', {}).get(
+                'getClientRectsNoise'),
             'client_rects_noise_enable': profileData.get('clientRects', {}).get('mode') == 'noise',
             'media_devices': {
                 'enable': profileData.get('mediaDevices', {}).get('enableMasking', True),
@@ -593,7 +599,7 @@ class GoLogin(object):
             },
         }
 
-        if self.orbita_major_version >= 135 and profileData.get('proxy', { 'mode': 'none'}).get('mode') != 'none':
+        if self.orbita_major_version >= 135 and profileData.get('proxy', {'mode': 'none'}).get('mode') != 'none':
             serverString = profileData.get('proxy').get('mode') + '://'
             if (profileData.get('proxy').get('username')):
                 serverString += profileData.get('proxy').get('username')
@@ -672,6 +678,14 @@ class GoLogin(object):
             json.dump(preferences, pfile)
 
     def createStartup(self):
+        if not self.profile_id:
+            raise ValueError("Profile ID is required")
+
+        self.profile_path = os.path.join(self.tmpdir, 'gologin_' + self.profile_id)
+        self.profile_default_folder_path = os.path.join(self.profile_path, 'Default')
+        self.profile_zip_path = os.path.join(self.tmpdir, 'gologin_' + self.profile_id + '.zip')
+        self.profile_zip_path_upload = os.path.join(self.tmpdir, 'gologin_' + self.profile_id + '_upload.zip')
+
         logger.debug('createStartup: %s', self.profile_path)
         if self.local == False and os.path.exists(self.profile_path):
             try:
@@ -711,8 +725,8 @@ class GoLogin(object):
         api_base_url = API_URL
 
         cookiesManagerInst = CookiesManager(
-            profile_id = self.profile_id,
-            tmpdir = self.tmpdir
+            profile_id=self.profile_id,
+            tmpdir=self.tmpdir
         )
 
         cookies_table_query = self.profile.get('createCookiesTableQuery')
@@ -724,7 +738,6 @@ class GoLogin(object):
         except Exception as e:
             logger.debug('downloadCookies exception: %s, line: %s', e, e.__traceback__.tb_lineno)
             raise e
-
 
     def uploadCookies(self, cookies):
         api_base_url = API_URL
@@ -826,7 +839,7 @@ class GoLogin(object):
         width = self.preferences.get("screenWidth")
         height = self.preferences.get("screenHeight")
         await page.setViewport({"width": width, "height": height})
-    
+
     # api for managing profiles
     def getRandomFingerprint(self, options: dict = {}):
         os_type = options.get('os', 'lin')
@@ -931,7 +944,8 @@ class GoLogin(object):
 
         if response.status_code == 400:
             data = response.json()
-            raise Exception(f"gologin failed account creation with status code, {response.status_code} DATA {json.dumps(data)}")
+            raise Exception(
+                f"gologin failed account creation with status code, {response.status_code} DATA {json.dumps(data)}")
 
         if response.status_code == 500:
             raise Exception(f"gologin failed account creation with status code, {response.status_code}")
@@ -959,9 +973,10 @@ class GoLogin(object):
     def createProfileRandomFingerprint(self, options: CreateProfileRandomFingerprintOptions):
         if options is None:
             options = {}
-            
+
         os_type = options.get('os', 'lin')
         name = options.get('name', 'api-generated')
+        folder = options.get('folderName', '')
 
         response = make_request(
             'POST',
@@ -975,6 +990,7 @@ class GoLogin(object):
                 "os": os_type,
                 "osSpec": options.get('osSpec', ''),
                 "name": name,
+                "folderName": folder,
             }
         )
 
@@ -1022,11 +1038,14 @@ class GoLogin(object):
 
     def getAvailableType(self, availableTrafficData):
         """Determine available proxy type based on traffic data"""
-        if availableTrafficData['mobileTrafficData']['trafficUsedBytes'] > availableTrafficData['mobileTrafficData']['trafficLimitBytes']:
+        if availableTrafficData['mobileTrafficData']['trafficUsedBytes'] > availableTrafficData['mobileTrafficData'][
+            'trafficLimitBytes']:
             return 'mobile'
-        elif availableTrafficData['residentialTrafficData']['trafficUsedBytes'] < availableTrafficData['residentialTrafficData']['trafficLimitBytes']:
+        elif availableTrafficData['residentialTrafficData']['trafficUsedBytes'] < \
+                availableTrafficData['residentialTrafficData']['trafficLimitBytes']:
             return 'resident'
-        elif availableTrafficData['dataCenterTrafficData']['trafficUsedBytes'] < availableTrafficData['dataCenterTrafficData']['trafficLimitBytes']:
+        elif availableTrafficData['dataCenterTrafficData']['trafficUsedBytes'] < \
+                availableTrafficData['dataCenterTrafficData']['trafficLimitBytes']:
             return 'dataCenter'
         else:
             return 'none'
@@ -1034,7 +1053,7 @@ class GoLogin(object):
     def addGologinProxyToProfile(self, profileId, countryCode, proxyType=''):
         """Add Gologin proxy to a profile"""
         trafficLimitMessage = "Traffic limit exceeded"
-        
+
         if not proxyType:
             availableTraffic = make_request(
                 'GET',
