@@ -14,6 +14,7 @@ import random
 import psutil
 import logging
 import sentry_sdk
+from urllib.parse import quote
 
 from .golgoin_types import CreateCustomBrowserOptions, CreateProfileRandomFingerprintOptions, BrowserProxyCreateValidation
 from .http_client import make_request
@@ -197,8 +198,10 @@ class GoLogin(object):
 
         if proxy:
             hr_rules = 'MAP * 0.0.0.0 , EXCLUDE %s' % (proxy_host)
-            params.append('--proxy-server='+proxy)
             params.append('--host-resolver-rules='+hr_rules)
+        
+        if proxy and self.orbita_major_version < 135:
+            params.append('--proxy-server='+proxy)
 
         if self.restore_last_session:
             params.append('--restore-last-session')
@@ -356,7 +359,7 @@ class GoLogin(object):
         if proxy.get('username', '') == '':
             return mode+'://'+proxy.get('host', '')+':'+str(proxy.get('port', 80))
         else:
-            return mode+'://'+proxy.get('username', '')+':'+proxy.get('password', '')+'@'+proxy.get('host', '')+':'+str(proxy.get('port', 80))
+            return mode+'://'+quote(proxy.get('username', ''), safe='')+':'+quote(proxy.get('password', ''), safe='')+'@'+proxy.get('host', '')+':'+str(proxy.get('port', 80))
 
     def getTimeZone(self):
         proxy = self.proxy
@@ -596,18 +599,19 @@ class GoLogin(object):
         if self.orbita_major_version >= 135 and profileData.get('proxy', { 'mode': 'none'}).get('mode') != 'none':
             serverString = profileData.get('proxy').get('mode') + '://'
             if (profileData.get('proxy').get('username')):
-                serverString += profileData.get('proxy').get('username')
+                serverString += quote(profileData.get('proxy').get('username'), safe='')
             if (profileData.get('proxy').get('password')):
-                serverString += ':' + profileData.get('proxy').get('password')
+                serverString += ':' + quote(profileData.get('proxy').get('password'), safe='')
             serverString += '@' + profileData.get('proxy').get('host') + ':' + str(profileData.get('proxy').get('port'))
 
             preferences['proxy'] = {
                 'mode': 'fixed_servers',
                 'schema': profileData.get('proxy').get('mode'),
-                'username': profileData.get('proxy').get('username'),
-                'password': profileData.get('proxy').get('password'),
+                'username': quote(profileData.get('proxy').get('username'), safe=''),
+                'password': quote(profileData.get('proxy').get('password'), safe=''),
                 'server': serverString
             }
+
         self.preferences = preferences
 
         return preferences
