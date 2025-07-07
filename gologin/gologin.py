@@ -318,7 +318,7 @@ class GoLogin(object):
         response = make_request('GET', API_URL + '/browser/' + self.profile_id + '/storage-signature', headers=headers)
         signedUrl = response.content.decode('utf-8')
 
-        make_request('PUT', signedUrl, json_data=open(self.profile_zip_path_upload, 'rb'))
+        make_request('PUT', signedUrl, data=open(self.profile_zip_path_upload, 'rb'))
 
         # print('commit profile complete')
 
