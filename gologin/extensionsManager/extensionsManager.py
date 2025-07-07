@@ -5,10 +5,13 @@ import pathlib
 import zipfile
 from sys import platform
 
+from ..http_client import make_request
+
 HOMEDIR = pathlib.Path.home()
 CHROME_EXT_DIR_NAME = 'chrome-extensions'
 EXTENSIONS_PATH = os.path.join(HOMEDIR, '.gologin', 'extensions')
 CHROME_EXTENSIONS_PATH = os.path.join(EXTENSIONS_PATH, CHROME_EXT_DIR_NAME)
+USER_CHROME_EXTENSIONS_PATH = os.path.join(EXTENSIONS_PATH, 'user-extensions')
 EXTENSION_URL = 'https://clients2.google.com/service/update2/crx?response=redirect&acceptformat=crx2,crx3&x=id%3D{ext_id}%26uc&prodversion=97.0.4692.71'
 
 
@@ -47,6 +50,49 @@ class ExtensionsManager():
             os.remove(os.path.join(CHROME_EXTENSIONS_PATH, archiveZipPath))
 
             return extVer
+    
+    def downloadUserChromeExt(self, profile_id, extensions_to_download=[], access_token=''):
+        if not os.path.exists(USER_CHROME_EXTENSIONS_PATH):
+            os.makedirs(USER_CHROME_EXTENSIONS_PATH)
+        existed_user_extensions = []
+        for ext_id in extensions_to_download:
+            ext_folder = os.path.join(USER_CHROME_EXTENSIONS_PATH, ext_id)
+
+            if os.path.exists(ext_folder):
+                existed_user_extensions.append(ext_id)
+                continue
+            
+            request_data = {
+                'existedUserChromeExtensions': existed_user_extensions,
+                'profileId': profile_id,
+                'userChromeExtensions': [ext_id]
+            }
+
+            headers = {
+                'Authorization': 'Bearer ' + access_token,
+                'User-Agent': 'Selenium-API'
+            }
+            
+            response = make_request(
+                'POST',
+                f"https://api.gologin.com/extensions/user_chrome_extensions_paths",
+                json_data=request_data,
+                headers=headers
+            )
+
+            if response.status_code < 300:
+                download_paths = response.json()
+
+                for download_url in download_paths:
+                    file_name = f"{ext_id}.zip"
+                    zip_path = os.path.join(USER_CHROME_EXTENSIONS_PATH, file_name)
+                    
+                    urllib.request.urlretrieve(download_url, zip_path)
+                    
+                    with zipfile.ZipFile(zip_path, 'r') as zip_file:
+                        zip_file.extractall(ext_folder)
+                    
+                    os.remove(zip_path)
 
 
     def extensionIsAlreadyExisted(self, settings = {}, profileExtensionsCheck = []):
