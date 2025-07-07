@@ -139,6 +139,7 @@ class GoLogin(object):
     def loadExtensions(self):
         profile = self.profile
         chromeExtensions = profile.get('chromeExtensions')
+        userChromeExtensions = profile.get('userChromeExtensions')
         extensionsManagerInst = ExtensionsManager()
         pathToExt = ''
         profileExtensionsCheck = []
@@ -149,6 +150,15 @@ class GoLogin(object):
                                       'extensions', 'chrome-extensions', ext + '@' + ver + ',')
                 profileExtensionsCheck.append(os.path.join(pathlib.Path.home(
                 ), '.gologin', 'extensions', 'chrome-extensions', ext + '@' + ver))
+            except Exception as e:
+                continue
+        for ext in userChromeExtensions:
+            try:
+                extensionsManagerInst.downloadUserChromeExt(self.profile_id, [ext], self.access_token)
+                pathToExt += os.path.join(pathlib.Path.home(), '.gologin',
+                                      'extensions', 'user-extensions', ext + ',')
+                profileExtensionsCheck.append(os.path.join(pathlib.Path.home(
+                ), '.gologin', 'extensions', 'user-extensions', ext))
             except Exception as e:
                 continue
 
@@ -190,7 +200,8 @@ class GoLogin(object):
         ]
 
         chromeExtensions = self.profile.get('chromeExtensions')
-        if chromeExtensions and len(chromeExtensions) > 0:
+        userChromeExtensions = self.profile.get('userChromeExtensions')
+        if (chromeExtensions and len(chromeExtensions) > 0) or (userChromeExtensions and len(userChromeExtensions) > 0):
             paths = self.loadExtensions()
             if paths is not None:
                 extToParams = '--load-extension=' + paths
@@ -307,7 +318,7 @@ class GoLogin(object):
         response = make_request('GET', API_URL + '/browser/' + self.profile_id + '/storage-signature', headers=headers)
         signedUrl = response.content.decode('utf-8')
 
-        make_request('PUT', signedUrl, data=open(self.profile_zip_path_upload, 'rb'))
+        make_request('PUT', signedUrl, json_data=open(self.profile_zip_path_upload, 'rb'))
 
         # print('commit profile complete')
 
@@ -1082,7 +1093,7 @@ class GoLogin(object):
                 'User-Agent': 'gologin-api',
                 'Content-Type': 'application/json',
             },
-            json={
+            json_data={
                 "countryCode": countryCode,
                 "isDc": isDc,
                 "isMobile": isMobile,
@@ -1106,7 +1117,7 @@ class GoLogin(object):
                 'User-Agent': 'gologin-api',
                 'Content-Type': 'application/json',
             },
-            json=cookies
+            json_data=cookies
         )
 
         return response.status_code

@@ -7,6 +7,13 @@ Combined changelog for GoLogin python SDK
 
 ### Fixes
 
+* Custom extensions now are downloadable through the SDK
+
+## [2025.7.4] 2025-07-02
+
+
+### Fixes
+
 * Fixed error with some socks5 proxy
 
 ## [2025.7.3] 2025-06-17
