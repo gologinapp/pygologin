@@ -2,7 +2,14 @@
 
 Combined changelog for GoLogin python SDK
 
-## [2025.7.4] 2025-07-02
+## [2025.7.6] 2025-07-14
+
+
+### Fixes
+
+* Profile with empty archive and no preferences file now can be opened
+
+## [2025.7.5] 2025-07-05
 
 
 ### Fixes

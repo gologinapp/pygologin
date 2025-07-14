@@ -630,6 +630,11 @@ class GoLogin(object):
     def updatePreferences(self):
         pref_file = os.path.join(self.profile_path, 'Default', 'Preferences')
 
+        if not os.path.exists(pref_file):
+            os.makedirs(os.path.dirname(pref_file), exist_ok=True)
+            with open(pref_file, 'w') as pfile:
+                json.dump(zeroProfilePreferences, pfile)
+
         with open(pref_file, 'r', encoding="utf-8") as pfile:
             preferences = json.load(pfile)
         profile = self.profile
