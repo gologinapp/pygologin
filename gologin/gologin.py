@@ -633,7 +633,7 @@ class GoLogin(object):
         if not os.path.exists(pref_file):
             os.makedirs(os.path.dirname(pref_file), exist_ok=True)
             with open(pref_file, 'w') as pfile:
-                json.dump({}, pfile)
+                json.dump(zeroProfilePreferences, pfile)
 
         with open(pref_file, 'r', encoding="utf-8") as pfile:
             preferences = json.load(pfile)
