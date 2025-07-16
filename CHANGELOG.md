@@ -2,6 +2,13 @@
 
 Combined changelog for GoLogin python SDK
 
+## [2025.7.7] 2025-07-16
+
+
+### Fixes
+
+* Languages are now passing correctly based on ip and proxy timezone
+
 ## [2025.7.6] 2025-07-14
 
 
