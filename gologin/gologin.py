@@ -16,6 +16,8 @@ import logging
 import sentry_sdk
 from urllib.parse import quote
 
+from gologin.browserManager.languages import get_intl_profile_config
+
 from .golgoin_types import CreateCustomBrowserOptions, CreateProfileRandomFingerprintOptions, BrowserProxyCreateValidation
 from .http_client import make_request
 
@@ -687,6 +689,13 @@ class GoLogin(object):
         if self.credentials_enable_service != None:
             preferences['credentials_enable_service'] = self.credentials_enable_service
         preferences['gologin'] = gologin
+
+        intl_profile_config = get_intl_profile_config(profile, self.tz, self.profile.get('autoLang', True))
+        
+        orbita_config_file = os.path.join(self.profile_path, 'orbita.config')
+        with open(orbita_config_file, 'w', encoding='utf-8') as ofile:
+            json.dump({'intl': intl_profile_config}, ofile, indent='\t')
+        
         with open(pref_file, 'w') as pfile:
             # print('preferences', preferences)
             json.dump(preferences, pfile)
