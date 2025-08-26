@@ -17,8 +17,8 @@ SAME_SITE = {
 
 COOKIE_ROW_COLUMN_NAMES = [
     'creation_utc',
-    'host_key',
     'top_frame_site_key',
+    'host_key',
     'name',
     'value',
     'encrypted_value',
@@ -33,7 +33,10 @@ COOKIE_ROW_COLUMN_NAMES = [
     'samesite',
     'source_scheme',
     'source_port',
+    'is_same_party',
     'last_update_utc',
+    'source_type',
+    'has_cross_site_ancestor'
 ]
 
 class CookiesManager():
@@ -128,14 +131,18 @@ class CookiesManager():
 
         return result
 
-    def load_cookies_from_file(self) -> List[Dict[str, any]]:
+    def load_cookies_from_file(self, cookies_file_path=None, is_second_try=False) -> List[Dict[str, any]]:
         db = None
         cookies = []
 
+        is_network_folder = 'Network' in cookies_file_path
+        second_cookies_file_path = os.path.join(self.tmpdir, f'gologin_{self.profile_id}', 'Default', 'Cookies' if is_network_folder else 'Network', 'Cookies')
+
         try:
-            db = self.get_db()
+            db = self.get_db(cookies_file_path)
             cookies_rows = db.execute('select * from cookies')
             cookies_rows = cookies_rows.fetchall()
+
             for row in cookies_rows:
                 row_data = dict(zip(COOKIE_ROW_COLUMN_NAMES, row))
                 cookies.append({
@@ -154,16 +161,20 @@ class CookiesManager():
                 })
         except Exception as error:
             print('load_cookies_from_file', error)
+            if not is_second_try:   
+                cookies = self.load_cookies_from_file(second_cookies_file_path, True)
             raise error
         finally:
             if db:
                 db.close()
-
+        if len(cookies) == 0 and not is_second_try:
+            cookies = self.load_cookies_from_file(second_cookies_file_path, True)
         return cookies
 
     def get_unique_cookies(self, cookies_arr: List[Dict[str, any]]) -> List[Dict[str, any]]:
         try:
-            cookies_in_file = self.load_cookies_from_file()
+            cookies_file_path = self.get_cookies_file_path()
+            cookies_in_file = self.load_cookies_from_file(cookies_file_path)
             
             existing_cookie_names = set()
             for cookie in cookies_in_file:

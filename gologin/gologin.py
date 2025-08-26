@@ -72,6 +72,7 @@ class GoLogin(object):
         self.is_cloud_headless = options.get('is_cloud_headless', True)
         self.is_new_cloud_browser = options.get('is_new_cloud_browser', True)
         self.orbita_major_version = 0
+        self.profile_path = ''
 
         if (os.environ.get('DISABLE_TELEMETRY') != 'true'):
             def before_send(event, hint):
@@ -280,6 +281,16 @@ class GoLogin(object):
             if proc.info.get('pid') == self.pid:
                 proc.kill()
         self.waitUntilProfileUsing()
+
+        if self.uploadCookiesToServer:
+            try:
+                cookies = self.load_cookies_from_file()
+                if cookies:
+                    self.uploadCookies(cookies)
+                    logger.debug('cookies uploaded successfully')
+            except Exception as e:
+                logger.debug('error uploading cookies: %s', e)
+
         self.sanitizeProfile()
         if self.local == False:
             self.commitProfile()
@@ -393,7 +404,14 @@ class GoLogin(object):
             'User-Agent': 'Selenium-API'
         }
         response = make_request('GET', API_URL + '/browser/features/' + profile + '/info-for-run', headers=headers)
-        data = json.loads(response.content.decode('utf-8'))
+        
+        if not response.content:
+            raise Exception("Empty response from GoLogin API. Please check your token and internet connection.")
+        
+        try:
+            data = json.loads(response.content.decode('utf-8'))
+        except json.JSONDecodeError as e:
+            raise Exception(f"Invalid JSON response from GoLogin API. Response: {response.content.decode('utf-8')[:200]}...")
 
         if data.get("statusCode") == 404:
             raise Exception(data.get("error") + ": " + data.get("message"))
@@ -755,19 +773,61 @@ class GoLogin(object):
             raise e
 
 
-    def uploadCookies(self, cookies):
-        api_base_url = API_URL
-        access_token = self.access_token
-
+    def load_cookies_from_file(self):
+        cookies = []
+        
         try:
+            cookies_manager = CookiesManager(
+                profile_id=self.profile_id,
+                tmpdir=self.tmpdir
+            )
+            
+            cookies_file_path = cookies_manager.get_cookies_file_path()
+            logger.debug('loading cookies from: %s', cookies_file_path)
+            raw_cookies = cookies_manager.load_cookies_from_file(cookies_file_path)
+            
+            cookies = self.format_cookies_for_upload(raw_cookies)
+            
+        except Exception as error:
+            logger.debug('error in load_cookies_from_file: %s', error)
+
+        return cookies
+
+    def format_cookies_for_upload(self, raw_cookies):
+        formatted_cookies = []
+        
+        for cookie in raw_cookies:
+            formatted_cookie = cookie.copy()
+            
+            if isinstance(cookie.get('value'), bytes):
+                try:
+                    formatted_cookie['value'] = {
+                        'data': list(cookie['value'])
+                    }
+                except Exception as e:
+                    logger.debug('error converting cookie value to buffer format: %s', e)
+                    formatted_cookie['value'] = ''
+            
+            formatted_cookies.append(formatted_cookie)
+        
+        return formatted_cookies
+
+    def uploadCookies(self, cookies):
+        try:
+            body = {
+                'cookies': cookies,
+                'isCookiesEncrypted': True,
+                'isStorageGateway': True
+            }
+            
             response = make_request(
                 'POST',
-                f"{api_base_url}/browser/{self.profile_id}/cookies/?encrypted=true",
+                f"{API_URL}/browser/features/profile/{self.profile_id}/update_after_close",
                 headers={
                     'Authorization': f'Bearer {self.access_token}',
                     'User-Agent': 'Selenium-API'
                 },
-                json_data=cookies
+                json_data=body
             )
             return response
         except Exception as e:
