@@ -2,6 +2,13 @@
 
 Combined changelog for GoLogin python SDK
 
+## [2025.8.1] 2025-08-26
+
+
+### Fixes
+
+* Cookies upload now works correctly
+
 ## [2025.7.7] 2025-07-16
 
 
