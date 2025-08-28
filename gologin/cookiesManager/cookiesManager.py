@@ -176,25 +176,19 @@ class CookiesManager():
             cookies_file_path = self.get_cookies_file_path()
             cookies_in_file = self.load_cookies_from_file(cookies_file_path)
             
-            existing_cookie_names = set()
+            existing_cookie_ids = set()
             for cookie in cookies_in_file:
-                if isinstance(cookie['value'], bytes):
-                    value_str = cookie['value'].decode('utf-8', errors='ignore')
-                else:
-                    value_str = str(cookie['value'])
-                
-                cookie_id = f"{cookie['name']}-{value_str}"
-                existing_cookie_names.add(cookie_id)
+                domain = cookie.get('domain', '')
+                path = cookie.get('path', '')
+                cookie_id = f"{cookie['name']}-{domain}-{path}"
+                existing_cookie_ids.add(cookie_id)
             
             unique_cookies = []
             for cookie in cookies_arr:
-                if isinstance(cookie['value'], bytes):
-                    value_str = cookie['value'].decode('utf-8', errors='ignore')
-                else:
-                    value_str = str(cookie['value'])
-                
-                cookie_id = f"{cookie['name']}-{value_str}"
-                if cookie_id not in existing_cookie_names:
+                domain = cookie.get('domain', '')
+                path = cookie.get('path', '')
+                cookie_id = f"{cookie['name']}-{domain}-{path}"
+                if cookie_id not in existing_cookie_ids:
                     unique_cookies.append(cookie)
             
             return unique_cookies
