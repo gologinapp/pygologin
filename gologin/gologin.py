@@ -33,6 +33,7 @@ from .cookiesManager import CookiesManager
 from .browserManager import BrowserManager
 from .zero_profile.preferences import zeroProfilePreferences
 from .zero_profile.bookmarks import zeroProfileBookmarks
+from .utils.sentry_fingerprinting import create_error_fingerprint
 from ._version import __version__
 
 API_URL = 'https://api.gologin.com'
@@ -99,6 +100,9 @@ class GoLogin(object):
                     error_message = str(exc_value).lower()
                     if any(ignored_msg.lower() in error_message for ignored_msg in ignored_errors):
                         return None
+                    
+                    # Apply custom fingerprinting
+                    event['fingerprint'] = create_error_fingerprint(exc_type, exc_value, tb)
                         
                 return event
             
