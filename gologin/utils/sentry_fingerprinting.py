@@ -4,15 +4,17 @@ def create_error_fingerprint(exc_type, exc_value, tb):
     
     # Network-related errors
     if 'No space left on device' in error_message:
-        return ['no-space-left-on-device', error_message]
+        return ['no-space-left-on-device']
     
     # Authentication errors
     if 'Proxy check failed' in error_message:
-        return ['proxy-check-failed', error_message]
+        return ['proxy-check-failed']
     
     # File system errors
     if 'You have reached your free API requests limit' in error_message:
-        return ['api-limit', error_message]
+        return ['api-limit']
     
     # Default grouping by error type and message
-    return ['unknown-error', error_type, error_message]
+    return ['unknown-error']
+
+
