@@ -3,6 +3,9 @@ import logging
 
 logger = logging.getLogger('gologin')
 
+class ProxyCheckFailedError(Exception):
+    pass
+
 class HTTPClient:
     @staticmethod
     def make_request(
@@ -53,9 +56,9 @@ class HTTPClient:
                     
                 except requests.exceptions.RequestException as retry_e:
                     logger.error(f"Retry request also failed: {method.upper()} {retry_url} - Error: {retry_e}")
-                    raise 'Proxy check failed. Please check your proxy or network connection'
+                    raise retry_e
             elif "geo.myip.link" in url:
-                raise 'Proxy check failed. Please check your proxy or network connection'
+                raise ProxyCheckFailedError('Proxy check failed. Please check your proxy or network connection', e)
             else:
                 raise e
 

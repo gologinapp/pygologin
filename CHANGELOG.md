@@ -2,6 +2,14 @@
 
 Combined changelog for GoLogin python SDK
 
+## [2025.10.1] 2025-10-24
+
+
+### Fixes
+
+* Browser downloading with different process in parallel
+* Sentry error grouping
+
 ## [2025.8.1] 2025-08-26
 
 
