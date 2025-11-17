@@ -2,6 +2,13 @@
 
 Combined changelog for GoLogin python SDK
 
+## [2025.11.17] 2025-11-17
+
+
+### Fixes
+
+* Browser downloading on Windows
+
 ## [2025.10.24] 2025-10-24
 
 
