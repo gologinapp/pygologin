@@ -7,8 +7,13 @@ import platform
 import subprocess
 import shutil
 import time
-import fcntl
 import errno
+
+if sys.platform != "win32":
+    import fcntl
+else:
+    import msvcrt
+
 class BrowserManager:
     def __init__(self):
         self.home = str(pathlib.Path.home())
@@ -121,37 +126,64 @@ class BrowserManager:
         while waited_time < max_wait_time:
             try:
                 lock_file = open(lock_file_path, 'w')
-                fcntl.flock(lock_file.fileno(), fcntl.LOCK_EX | fcntl.LOCK_NB)
+                if sys.platform == "win32":
+                    msvcrt.locking(lock_file.fileno(), msvcrt.LK_NBLCK, 1)
+                else:
+                    fcntl.flock(lock_file.fileno(), fcntl.LOCK_EX | fcntl.LOCK_NB)
                 lock_file.write(f"{os.getpid()}\n")
                 lock_file.flush()
                 return lock_file
             except (OSError, IOError) as e:
-                if e.errno == errno.EAGAIN or e.errno == errno.EACCES:
-                    if os.path.exists(lock_file_path):
-                        try:
-                            with open(lock_file_path, 'r') as f:
-                                pid = f.read().strip()
-                                if pid and self._is_process_running(int(pid)):
-                                    print(f"Waiting for Orbita browser version {major_version} download to complete...")
-                                    time.sleep(check_interval)
-                                    waited_time += check_interval
-                                    continue
-                                else:
-                                    os.remove(lock_file_path)
-                        except (ValueError, OSError):
-                            os.remove(lock_file_path)
+                if sys.platform == "win32":
+                    if e.errno == errno.EACCES or e.errno == errno.EAGAIN:
+                        if os.path.exists(lock_file_path):
+                            try:
+                                with open(lock_file_path, 'r') as f:
+                                    pid = f.read().strip()
+                                    if pid and self._is_process_running(int(pid)):
+                                        print(f"Waiting for Orbita browser version {major_version} download to complete...")
+                                        time.sleep(check_interval)
+                                        waited_time += check_interval
+                                        continue
+                                    else:
+                                        os.remove(lock_file_path)
+                            except (ValueError, OSError):
+                                os.remove(lock_file_path)
+                        else:
+                            time.sleep(check_interval)
+                            waited_time += check_interval
                     else:
-                        time.sleep(check_interval)
-                        waited_time += check_interval
+                        raise
                 else:
-                    raise
+                    if e.errno == errno.EAGAIN or e.errno == errno.EACCES:
+                        if os.path.exists(lock_file_path):
+                            try:
+                                with open(lock_file_path, 'r') as f:
+                                    pid = f.read().strip()
+                                    if pid and self._is_process_running(int(pid)):
+                                        print(f"Waiting for Orbita browser version {major_version} download to complete...")
+                                        time.sleep(check_interval)
+                                        waited_time += check_interval
+                                        continue
+                                    else:
+                                        os.remove(lock_file_path)
+                            except (ValueError, OSError):
+                                os.remove(lock_file_path)
+                        else:
+                            time.sleep(check_interval)
+                            waited_time += check_interval
+                    else:
+                        raise
         
         raise Exception(f"Timeout waiting for Orbita browser version {major_version} download lock")
 
     def _release_lock(self, lock_file, lock_file_path: str):
         if lock_file:
             try:
-                fcntl.flock(lock_file.fileno(), fcntl.LOCK_UN)
+                if sys.platform == "win32":
+                    msvcrt.locking(lock_file.fileno(), msvcrt.LK_UNLCK, 1)
+                else:
+                    fcntl.flock(lock_file.fileno(), fcntl.LOCK_UN)
                 lock_file.close()
             except (OSError, IOError):
                 pass
