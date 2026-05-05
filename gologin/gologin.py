@@ -1147,14 +1147,30 @@ class GoLogin(object):
 
     def getAvailableType(self, availableTrafficData):
         """Determine available proxy type based on traffic data"""
-        if availableTrafficData['mobileTrafficData']['trafficUsedBytes'] > availableTrafficData['mobileTrafficData']['trafficLimitBytes']:
-            return 'mobile'
-        elif availableTrafficData['residentialTrafficData']['trafficUsedBytes'] < availableTrafficData['residentialTrafficData']['trafficLimitBytes']:
-            return 'resident'
-        elif availableTrafficData['dataCenterTrafficData']['trafficUsedBytes'] < availableTrafficData['dataCenterTrafficData']['trafficLimitBytes']:
-            return 'dataCenter'
-        else:
+
+        def traffic_has_capacity(block):
+            if not block or not isinstance(block, dict):
+                return False
+            used = block.get('trafficUsedBytes')
+            limit = block.get('trafficLimitBytes')
+            if used is None or limit is None:
+                return False
+            return used < limit
+
+        if not isinstance(availableTrafficData, dict):
             return 'none'
+
+        mobile = availableTrafficData.get('mobileTrafficData')
+        residential = availableTrafficData.get('residentialTrafficData')
+        datacenter = availableTrafficData.get('dataCenterTrafficData')
+
+        if traffic_has_capacity(mobile):
+            return 'mobile'
+        if traffic_has_capacity(residential):
+            return 'resident'
+        if traffic_has_capacity(datacenter):
+            return 'dataCenter'
+        return 'none'
 
     def addGologinProxyToProfile(self, profileId, countryCode, proxyType=''):
         """Add Gologin proxy to a profile"""
