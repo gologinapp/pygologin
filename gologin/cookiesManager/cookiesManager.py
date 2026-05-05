@@ -175,29 +175,13 @@ class CookiesManager():
         try:
             cookies_file_path = self.get_cookies_file_path()
             cookies_in_file = self.load_cookies_from_file(cookies_file_path)
-            
-            existing_cookie_names = set()
-            for cookie in cookies_in_file:
-                if isinstance(cookie['value'], bytes):
-                    value_str = cookie['value'].decode('utf-8', errors='ignore')
-                else:
-                    value_str = str(cookie['value'])
-                
-                cookie_id = f"{cookie['name']}-{value_str}"
-                existing_cookie_names.add(cookie_id)
-            
-            unique_cookies = []
-            for cookie in cookies_arr:
-                if isinstance(cookie['value'], bytes):
-                    value_str = cookie['value'].decode('utf-8', errors='ignore')
-                else:
-                    value_str = str(cookie['value'])
-                
-                cookie_id = f"{cookie['name']}-{value_str}"
-                if cookie_id not in existing_cookie_names:
-                    unique_cookies.append(cookie)
-            
-            return unique_cookies
+
+            def make_cookie_id(cookie: Dict[str, any]) -> str:
+                return f"{cookie.get('name', '')}-{cookie.get('domain', '')}-{cookie.get('path', '')}"
+
+            existing_cookie_ids = {make_cookie_id(cookie) for cookie in cookies_in_file}
+
+            return [cookie for cookie in cookies_arr if make_cookie_id(cookie) not in existing_cookie_ids]
         except Exception as error:
             print('get_unique_cookies error:', error)
             return cookies_arr
@@ -205,14 +189,19 @@ class CookiesManager():
     def unix_to_ldap(self, unixtime: int) -> int:
         if unixtime == 0:
             return unixtime
-            
+
+        MAX_SQLITE_INT = 2**63 - 1
+        MAX_UNIX_SECONDS = 32503680000  # year 3000 — anything above this is likely already ms or LDAP
+
+        normalized = unixtime / 1000 if unixtime > MAX_UNIX_SECONDS else unixtime
+
         win32_epoch = datetime.datetime(1601, 1, 1, tzinfo=datetime.timezone.utc)
         epoch_diff_seconds = (datetime.datetime(1970, 1, 1, tzinfo=datetime.timezone.utc) - win32_epoch).total_seconds()
-        
-        windows_seconds = unixtime + epoch_diff_seconds
+
+        windows_seconds = normalized + epoch_diff_seconds
         ldap_timestamp = int(windows_seconds * 10000000)
-        
-        return ldap_timestamp
+
+        return min(ldap_timestamp, MAX_SQLITE_INT)
 
     def ldap_to_unix(self, ldap):
         ldap_str = str(int(ldap))  # Convert to integer first to avoid decimals
@@ -279,10 +268,13 @@ class CookiesManager():
 
         try:
             if len(unique_cookies) > 0:
+                print('unique_cookies111', unique_cookies)
                 chunk_insert_values = self.get_chunked_insert_values(unique_cookies)
+                print('chunk_insert_values', chunk_insert_values)
                 for query, query_params in chunk_insert_values:
                     for params in query_params:
                         res = cursor.execute(query, params)
+            print('res')
             db.commit()
             db.close()
         except Exception as error:
